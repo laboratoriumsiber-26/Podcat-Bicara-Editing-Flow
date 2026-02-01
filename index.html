@@ -30,19 +30,13 @@
         .input-group { margin-bottom: 12px; }
         label { font-size: 11px; font-weight: bold; color: #888; display: block; margin-bottom: 5px; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        input:disabled, textarea:disabled, select:disabled { background-color: #f5f5f7; color: #888; cursor: not-allowed; }
         .btn-main { background: var(--ios-blue); color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
         .btn-danger { background: var(--ios-red); color: white; border: none; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; width: 100%; }
         .pill { padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; }
-        
-        /* EFEK VISUAL SESUAI PERMINTAAN */
         .blink-red { animation: blinker 1s linear infinite !important; background-color: var(--ios-red) !important; color: white !important; }
         @keyframes blinker { 50% { opacity: 0.2; } }
-
-        /* Style tambahan untuk list hapus */
         .mgmt-list { margin: 10px 0; padding: 0; list-style: none; background: #fff; border-radius: 10px; }
         .mgmt-item { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 12px; align-items: center; }
-        .mgmt-item:last-child { border-bottom: none; }
         .del-btn { color: var(--ios-red); cursor: pointer; border: none; background: none; }
         .hidden { display: none; }
     </style>
@@ -117,27 +111,20 @@
                 <label style="margin-top:10px">Nomor WA Admin (Status: RETAKE)</label>
                 <input type="text" id="wa-retake-multi" placeholder="62812...">
             </div>
-
             <div style="background:#f0f0f7; padding:15px; border-radius:15px; margin-bottom:15px">
-                <label>Daftar Editor Saat Ini:</label>
+                <label>Daftar Editor:</label>
                 <div id="list-editor-del" class="mgmt-list"></div>
-                <hr>
-                <label>Tambah Editor Baru</label>
                 <input type="text" id="m-name" placeholder="Nama Editor">
                 <input type="text" id="m-wa" placeholder="WA Editor (628...)">
                 <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addEditor()">Tambah Editor</button>
             </div>
-
             <div style="background:#f0f0f7; padding:15px; border-radius:15px">
-                <label>Daftar Subject Saat Ini:</label>
+                <label>Daftar Subject:</label>
                 <div id="list-subject-del" class="mgmt-list"></div>
-                <hr>
-                <label>Tambah Subject Baru</label>
                 <input type="text" id="m-sub" placeholder="Nama Subject">
                 <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addSubject()">Tambah Subject</button>
             </div>
-            
-            <button class="btn-main" style="width:100%; margin-top:15px; background:#333" onclick="saveManagement()">Simpan Pengaturan</button>
+            <button class="btn-main" style="width:100%; margin-top:15px; background:#333" onclick="saveManagement()">Simpan Pengaturan & Sinkron</button>
             <button class="btn-main" style="width:100%; background:#888; margin-top:8px" onclick="closeModal('modalManagement')">Batal</button>
         </div>
     </div>
@@ -159,16 +146,11 @@
     <div id="modalAction" class="modal">
         <div class="modal-content">
             <h3 id="a-title-display">Project Detail</h3>
-            <div style="background: #f9f9f9; padding: 10px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee;">
-                <div class="input-group"><label>Project Title</label><input type="text" id="a-title-readonly" readonly></div>
-                <div class="input-group"><label>Subject</label><input type="text" id="a-subject-readonly" readonly></div>
-                <div class="input-group"><label>Editor PJ</label><input type="text" id="a-editor-readonly" readonly></div>
-            </div>
             <div class="input-group"><label>Status</label><select id="a-status" onchange="toggleNoteField()"></select></div>
             <div class="input-group"><label>Link Video Result</label><input type="text" id="a-result"></div>
             <div class="input-group"><label>Link Video Revision</label><input type="text" id="a-revision"></div>
             <div class="input-group">
-                <label>Note / Catatan <span id="note-alert" style="color:red; font-size:9px; display:none;">(Hanya aktif saat status RETAKE)</span></label>
+                <label>Note / Catatan</label>
                 <textarea id="a-note" style="height: 100px;"></textarea>
             </div>
             <div id="admin-pj-zone" class="hidden"><label>Ganti Editor PJ</label><select id="a-editor-select"></select></div>
@@ -179,17 +161,16 @@
     </div>
 
     <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0X6dTdVvMRO-cpeC3mvP8NsM9CPPvEbYufWcoizf9N6SmE69qKiqgGt80M-IPyFMazA/exec';
+
         let currentUser = null;
         let activeId = null;
 
-        // Data Management (Ambil dari LocalStorage jika ada)
-        let waReviewNumbers = localStorage.getItem('waReview') || "62812345678";
-        let waRetakeNumbers = localStorage.getItem('waRetake') || "62812345678";
         let subjects = JSON.parse(localStorage.getItem('subjects')) || ["Heru Mudiyanto M,Pd", "Drs. Budi"];
         let editors = JSON.parse(localStorage.getItem('editors')) || [{name: "Mohamad Ardan Fahrobi", wa: "628571234567"}];
         let projects = JSON.parse(localStorage.getItem('projects')) || [];
 
-        window.onload = function() {
+        window.onload = () => {
             const session = localStorage.getItem('podcastSession');
             if (session) { currentUser = session; showDashboard(); }
         };
@@ -217,11 +198,25 @@
         function syncDropdowns() {
             const htmlSub = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
             const htmlEd = editors.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
-            document.getElementById('n-subject').innerHTML = htmlSub;
-            document.getElementById('n-editor').innerHTML = htmlEd;
-            document.getElementById('a-editor-select').innerHTML = htmlEd;
-            document.getElementById('f-subject').innerHTML = '<option value="">Semua Subject</option>' + htmlSub;
-            document.getElementById('f-editor').innerHTML = '<option value="">Semua Editor</option>' + htmlEd;
+            ['n-subject', 'f-subject'].forEach(id => {
+                document.getElementById(id).innerHTML = (id.startsWith('f') ? '<option value="">Semua Subject</option>' : '') + htmlSub;
+            });
+            ['n-editor', 'f-editor', 'a-editor-select'].forEach(id => {
+                document.getElementById(id).innerHTML = (id.startsWith('f') ? '<option value="">Semua Editor</option>' : '') + htmlEd;
+            });
+        }
+
+        async function uploadToSheet() {
+            console.log("Syncing to Cloud...");
+            const data = {
+                projects: projects,
+                editors: editors,
+                subjects: subjects
+            };
+            try {
+                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+                console.log("Cloud Sync Success");
+            } catch (e) { console.error("Sync Error", e); }
         }
 
         function renderTable() {
@@ -232,134 +227,21 @@
             
             tbody.innerHTML = projects
                 .filter(p => (!fSub || p.subject === fSub) && (!fEd || p.editor === fEd) && (!fStat || p.status === fStat))
-                .map(p => {
-                    let statusColor = getStatusColor(p.status);
-                    let statusClass = "pill" + (p.status === 'Revision Needed' ? " blink-red" : "");
-                    return `<tr>
+                .map(p => `
+                    <tr>
                         <td><b>${p.title}</b></td>
-                        <td>${p.subject}</td>
-                        <td>${p.editor}</td>
-                        <td>${p.deadline}</td>
-                        <td><span class="${statusClass}" style="background:${statusColor}; color:white">${p.status}</span></td>
+                        <td>${p.subject}</td><td>${p.editor}</td><td>${p.deadline}</td>
+                        <td><span class="pill" style="background:${getStatusColor(p.status)}; color:white">${p.status}</span></td>
                         <td><a href="${p.material}"><i class="fa-solid fa-download"></i></a></td>
                         <td><a href="${p.raw}" target="_blank"><i class="fa-solid fa-link"></i></a></td>
                         <td>${p.result ? `<a href="${p.result}" target="_blank"><i class="fa-solid fa-play"></i></a>` : '-'}</td>
                         <td>${p.revision ? `<a href="${p.revision}" target="_blank"><i class="fa-solid fa-rotate"></i></a>` : '-'}</td>
-                        <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><small>${p.note || '-'}</small></td>
+                        <td><small>${p.note || '-'}</small></td>
                         <td><button onclick="openAction(${p.id})"><i class="fa-solid fa-pen-to-square"></i></button></td>
-                    </tr>`;
-                }).join('');
-            updateChart();
+                    </tr>`).join('');
+            
             localStorage.setItem('projects', JSON.stringify(projects));
-        }
-
-        function getStatusColor(s) {
-            switch(s) {
-                case 'Finalized': return 'var(--ios-green)';
-                case 'In Progress': return 'var(--ios-yellow)';
-                case 'Review': return 'var(--ios-blue)';
-                case 'Retake': return '#FFCC00'; /* Kuning */
-                case 'Revision Needed': return 'var(--ios-red)';
-                default: return '#8e8e93';
-            }
-        }
-
-        // FUNGSI MANAGEMENT BARU (UNTUK HAPUS)
-        function openManagement() {
-            document.getElementById('wa-review-multi').value = waReviewNumbers;
-            document.getElementById('wa-retake-multi').value = waRetakeNumbers;
-            renderMgmtLists();
-            openModal('modalManagement');
-        }
-
-        function renderMgmtLists() {
-            const edDiv = document.getElementById('list-editor-del');
-            edDiv.innerHTML = editors.map((e, i) => `
-                <div class="mgmt-item">
-                    <span>${e.name}</span>
-                    <i class="fa-solid fa-trash del-btn" onclick="deleteEditor(${i})"></i>
-                </div>
-            `).join('');
-
-            const subDiv = document.getElementById('list-subject-del');
-            subDiv.innerHTML = subjects.map((s, i) => `
-                <div class="mgmt-item">
-                    <span>${s}</span>
-                    <i class="fa-solid fa-trash del-btn" onclick="deleteSubject(${i})"></i>
-                </div>
-            `).join('');
-        }
-
-        function deleteEditor(i) { if(confirm("Hapus editor?")) { editors.splice(i, 1); renderMgmtLists(); } }
-        function deleteSubject(i) { if(confirm("Hapus subject?")) { subjects.splice(i, 1); renderMgmtLists(); } }
-
-        function addEditor() {
-            const n = document.getElementById('m-name').value;
-            const w = document.getElementById('m-wa').value;
-            if(n && w) { editors.push({name:n, wa:w}); document.getElementById('m-name').value=''; document.getElementById('m-wa').value=''; renderMgmtLists(); }
-        }
-
-        function addSubject() {
-            const s = document.getElementById('m-sub').value;
-            if(s) { subjects.push(s); document.getElementById('m-sub').value=''; renderMgmtLists(); }
-        }
-
-        function saveManagement() {
-            waReviewNumbers = document.getElementById('wa-review-multi').value;
-            waRetakeNumbers = document.getElementById('wa-retake-multi').value;
-            localStorage.setItem('waReview', waReviewNumbers);
-            localStorage.setItem('waRetake', waRetakeNumbers);
-            localStorage.setItem('editors', JSON.stringify(editors));
-            localStorage.setItem('subjects', JSON.stringify(subjects));
-            syncDropdowns();
-            alert("Pengaturan Berhasil Disimpan");
-            closeModal('modalManagement');
-        }
-
-        // LOGIKA MODAL LAINNYA (Tetap Sama)
-        function toggleNoteField() {
-            if(currentUser === 'admin') return;
-            const stat = document.getElementById('a-status').value;
-            const note = document.getElementById('a-note');
-            if(stat === 'Retake') { note.disabled = false; document.getElementById('note-alert').style.display='none'; }
-            else { note.disabled = true; document.getElementById('note-alert').style.display='inline'; }
-        }
-
-        function openAction(id) {
-            activeId = id;
-            const p = projects.find(x => x.id === id);
-            document.getElementById('a-title-readonly').value = p.title;
-            document.getElementById('a-subject-readonly').value = p.subject;
-            document.getElementById('a-editor-readonly').value = p.editor;
-            document.getElementById('a-result').value = p.result;
-            document.getElementById('a-revision').value = p.revision;
-            document.getElementById('a-note').value = p.note || "";
-            const sSelect = document.getElementById('a-status');
-            const allS = ["To do", "In Progress", "Review", "Revision Needed", "Retake", "Finalized"];
-            const userS = ["To do", "In Progress", "Review", "Retake"];
-            sSelect.innerHTML = (currentUser === 'admin' ? allS : userS).map(s => `<option value="${s}">${s}</option>`).join('');
-            sSelect.value = p.status;
-            if(currentUser === 'admin') {
-                document.getElementById('admin-delete-zone').classList.remove('hidden');
-                document.getElementById('admin-pj-zone').classList.remove('hidden');
-                document.getElementById('a-note').disabled = false;
-            } else {
-                document.getElementById('admin-delete-zone').classList.add('hidden');
-                document.getElementById('admin-pj-zone').classList.add('hidden');
-                toggleNoteField();
-            }
-            openModal('modalAction');
-        }
-
-        function saveAction() {
-            const p = projects.find(x => x.id === activeId);
-            p.status = document.getElementById('a-status').value;
-            p.result = document.getElementById('a-result').value;
-            p.revision = document.getElementById('a-revision').value;
-            if(!document.getElementById('a-note').disabled) p.note = document.getElementById('a-note').value;
-            if(currentUser === 'admin') p.editor = document.getElementById('a-editor-select').value;
-            closeModal('modalAction');
-            renderTable();
+            updateChart();
         }
 
         function saveNewProject() {
@@ -367,13 +249,73 @@
                 id: Date.now(), title: document.getElementById('n-title').value,
                 subject: document.getElementById('n-subject').value, editor: document.getElementById('n-editor').value,
                 deadline: document.getElementById('n-deadline').value, material: document.getElementById('n-mat').value,
-                raw: document.getElementById('n-raw').value, status: 'To do', result: '', revision: '', note: ''
+                raw: document.getElementById('n-raw').value, status: 'To do'
             });
             closeModal('modalNewProject');
             renderTable();
+            uploadToSheet();
         }
 
-        function deleteProject() { if(confirm("Hapus project?")) { projects = projects.filter(x => x.id !== activeId); closeModal('modalAction'); renderTable(); } }
+        function saveAction() {
+            const p = projects.find(x => x.id === activeId);
+            p.status = document.getElementById('a-status').value;
+            p.result = document.getElementById('a-result').value;
+            p.revision = document.getElementById('a-revision').value;
+            p.note = document.getElementById('a-note').value;
+            if(currentUser === 'admin') p.editor = document.getElementById('a-editor-select').value;
+            closeModal('modalAction');
+            renderTable();
+            uploadToSheet();
+        }
+
+        function deleteProject() {
+            if(confirm("Hapus project?")) {
+                projects = projects.filter(x => x.id !== activeId);
+                closeModal('modalAction');
+                renderTable();
+                uploadToSheet();
+            }
+        }
+
+        function openManagement() {
+            renderMgmtLists();
+            openModal('modalManagement');
+        }
+
+        function renderMgmtLists() {
+            document.getElementById('list-editor-del').innerHTML = editors.map((e, i) => `
+                <div class="mgmt-item"><span>${e.name}</span><i class="fa-solid fa-trash del-btn" onclick="deleteEditor(${i})"></i></div>`).join('');
+            document.getElementById('list-subject-del').innerHTML = subjects.map((s, i) => `
+                <div class="mgmt-item"><span>${s}</span><i class="fa-solid fa-trash del-btn" onclick="deleteSubject(${i})"></i></div>`).join('');
+        }
+
+        function addEditor() {
+            const n = document.getElementById('m-name').value;
+            const w = document.getElementById('m-wa').value;
+            if(n && w) { editors.push({name:n, wa:w}); renderMgmtLists(); }
+        }
+
+        function addSubject() {
+            const s = document.getElementById('m-sub').value;
+            if(s) { subjects.push(s); renderMgmtLists(); }
+        }
+
+        function deleteEditor(i) { editors.splice(i, 1); renderMgmtLists(); }
+        function deleteSubject(i) { subjects.splice(i, 1); renderMgmtLists(); }
+
+        function saveManagement() {
+            localStorage.setItem('editors', JSON.stringify(editors));
+            localStorage.setItem('subjects', JSON.stringify(subjects));
+            syncDropdowns();
+            uploadToSheet();
+            alert("Tersimpan & Sinkron ke Spreadsheet!");
+            closeModal('modalManagement');
+        }
+
+        function getStatusColor(s) {
+            const colors = { 'Finalized': 'var(--ios-green)', 'In Progress': 'var(--ios-yellow)', 'Review': 'var(--ios-blue)', 'Retake': '#FFCC00', 'Revision Needed': 'var(--ios-red)' };
+            return colors[s] || '#8e8e93';
+        }
 
         function updateChart() {
             const s = { todo: projects.filter(x => x.status === 'To do').length, progress: projects.filter(x => x.status === 'In Progress').length, final: projects.filter(x => x.status === 'Finalized').length };
@@ -389,58 +331,24 @@
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-/* --- INTEGRASI GOOGLE SPREADSHEET (VERSI LENGKAP) --- */
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0X6dTdVvMRO-cpeC3mvP8NsM9CPPvEbYufWcoizf9N6SmE69qKiqgGt80M-IPyFMazA/exec'; // Pastikan URL ini sudah benar
-
-        async function uploadToSheet() {
-            const dataToSync = {
-                projects: JSON.parse(localStorage.getItem('projects')) || [],
-                editors: JSON.parse(localStorage.getItem('editors')) || [],
-                subjects: JSON.parse(localStorage.getItem('subjects')) || []
-            };
-
-            console.log("Memulai sinkronisasi ke Spreadsheet...");
-
-            try {
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(dataToSync)
-                });
-                console.log("Sinkronisasi Berhasil!");
-            } catch (error) {
-                console.error("Sinkronisasi Gagal:", error);
+        function openAction(id) {
+            activeId = id;
+            const p = projects.find(x => x.id === id);
+            document.getElementById('a-result').value = p.result || "";
+            document.getElementById('a-revision').value = p.revision || "";
+            document.getElementById('a-note').value = p.note || "";
+            const sSelect = document.getElementById('a-status');
+            const allS = ["To do", "In Progress", "Review", "Revision Needed", "Retake", "Finalized"];
+            sSelect.innerHTML = (currentUser === 'admin' ? allS : allS.slice(0,5)).map(s => `<option value="${s}">${s}</option>`).join('');
+            sSelect.value = p.status;
+            if(currentUser === 'admin') {
+                document.getElementById('admin-delete-zone').classList.remove('hidden');
+                document.getElementById('admin-pj-zone').classList.remove('hidden');
             }
+            openModal('modalAction');
         }
 
-        // 1. Integrasi saat tabel project berubah (tambah/update/hapus project)
-        const originalRenderTable = renderTable;
-        renderTable = function() {
-            originalRenderTable(); 
-            uploadToSheet();      
-        };
-
-        // 2. Integrasi saat klik "Simpan Pengaturan" di Management
-        const originalSaveManagement = saveManagement;
-        saveManagement = function() {
-            originalSaveManagement();
-            uploadToSheet(); // Ini akan mengirim data Editor & Subject terbaru
-        };
-
-        // 3. Integrasi saat menghapus editor atau subject (langsung sinkron)
-        const originalDeleteEditor = deleteEditor;
-        deleteEditor = function(i) {
-            originalDeleteEditor(i);
-            uploadToSheet();
-        };
-
-        const originalDeleteSubject = deleteSubject;
-        deleteSubject = function(i) {
-            originalDeleteSubject(i);
-            uploadToSheet();
-        };
+        function toggleNoteField() {} 
     </script>
 </body>
 </html>
-
-
