@@ -30,7 +30,7 @@
         .stat-card b { font-size: 24px; display: block; }
         
         .table-container { background: white; border-radius: 20px; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; min-width: 1400px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1500px; }
         th { background: #f9f9f9; padding: 15px; text-align: left; font-size: 11px; color: #888; border-bottom: 1px solid #eee; }
         td { padding: 15px; border-bottom: 1px solid #f2f2f7; font-size: 13px; }
         
@@ -105,8 +105,16 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Project Title</th><th>Subject</th><th>Editor</th><th>Deadline</th><th>Status</th>
-                        <th>Links</th><th>Note</th><th>Action</th>
+                        <th>Project Title</th>
+                        <th>Subject</th>
+                        <th>Editor</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                        <th>RAW Link</th>
+                        <th>Result</th>
+                        <th>Revision</th>
+                        <th>Note</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="main-table-body"></tbody>
@@ -178,7 +186,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaEIxokQhwsu_fTnhF9yVgqHGBVar6hYBXGHpo2-SsyDN-uG1cR0grQOBSg4JApCxj/exec'; // GANTI DENGAN URL APPS SCRIPT ANDA
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoB-ar6y8AfG_ZjeFNy69LFg0bC6a9YTtv80CrdJNoEPr-KuKx4YMCsQJFGAAlcS_M/exec';
 
         let currentUser = null, activeRowIndex = null, projects = [], editors = [], subjects = [], waReview = "", waRetake = "";
 
@@ -194,7 +202,13 @@
             try {
                 const resp = await fetch(SCRIPT_URL);
                 const data = await resp.json();
-                projects = data.projects.slice(1).map((r, i) => ({ rowIndex: i + 2, title: r[0], subject: r[1], editor: r[2], deadline: r[3], status: r[4], material: r[5], raw: r[6], result: r[7], revision: r[8], note: r[9] }));
+                // r[0]=Title, r[1]=Subject, r[2]=Editor, r[3]=Deadline, r[4]=Status, r[5]=Material, r[6]=RAW, r[7]=Result, r[8]=Revision, r[9]=Note
+                projects = data.projects.slice(1).map((r, i) => ({ 
+                    rowIndex: i + 2, 
+                    title: r[0], subject: r[1], editor: r[2], deadline: r[3], 
+                    status: r[4], material: r[5], raw: r[6], result: r[7], 
+                    revision: r[8], note: r[9] 
+                }));
                 editors = data.settings.filter(r => r[0] === 'EDITOR').map(r => ({name: r[1], wa: r[2]}));
                 subjects = data.settings.filter(r => r[0] === 'SUBJECT').map(r => r[1]);
                 waReview = data.settings.find(r => r[0] === 'WA_REVIEW')?.[1] || "";
@@ -218,13 +232,17 @@
                     <td><span class="pill ${p.status === 'Revision Needed' ? 'blink-red' : ''}" style="background:${getStatusColor(p.status)}; color:white">${p.status}</span></td>
                     <td>
                         <div style="display:flex; gap:10px">
-                            <a href="${p.material}" target="_blank" title="Material"><i class="fa-solid fa-box-open"></i></a>
-                            <a href="${p.raw}" target="_blank" title="RAW"><i class="fa-solid fa-film"></i></a>
-                            ${p.result ? `<a href="${p.result}" target="_blank" title="Result" style="color:var(--ios-green)"><i class="fa-solid fa-play-circle"></i></a>` : ''}
+                            <a href="${p.raw}" target="_blank" title="RAW Link"><i class="fa-solid fa-link"></i></a>
                         </div>
                     </td>
-                    <td><small>${p.note || '-'}</small></td>
-                    <td><button onclick="openAction(${p.rowIndex})"><i class="fa-solid fa-pen"></i></button></td>
+                    <td>
+                         ${p.result && p.result !== '-' ? `<a href="${p.result}" target="_blank" title="Result" style="color:var(--ios-green)"><i class="fa-solid fa-play-circle"></i></a>` : '-'}
+                    </td>
+                    <td>
+                         ${p.revision && p.revision !== '-' ? `<a href="${p.revision}" target="_blank" title="Revision" style="color:var(--ios-red)"><i class="fa-solid fa-rotate-left"></i></a>` : '-'}
+                    </td>
+                    <td><small title="${p.note}">${p.note || '-'}</small></td>
+                    <td><button onclick="openAction(${p.rowIndex})"><i class="fa-solid fa-pen-to-square"></i></button></td>
                 </tr>
             `).join('');
             updateStats();
@@ -240,7 +258,15 @@
         }
 
         async function saveAction() {
-            const payload = { action:'UPDATE', rowIndex: activeRowIndex, status: document.getElementById('a-status').value, result: document.getElementById('a-result').value, revision: document.getElementById('a-revision').value, note: document.getElementById('a-note').value, newEditor: currentUser === 'admin' ? document.getElementById('a-editor-select').value : null };
+            const payload = { 
+                action:'UPDATE', 
+                rowIndex: activeRowIndex, 
+                status: document.getElementById('a-status').value, 
+                result: document.getElementById('a-result').value, 
+                revision: document.getElementById('a-revision').value, 
+                note: document.getElementById('a-note').value, 
+                newEditor: currentUser === 'admin' ? document.getElementById('a-editor-select').value : null 
+            };
             toggleLoading(true);
             await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             closeModal('modalAction');
@@ -268,9 +294,9 @@
             activeRowIndex = rowIndex;
             const p = projects.find(x => x.rowIndex === rowIndex);
             document.getElementById('a-title-readonly').value = p.title;
-            document.getElementById('a-result').value = p.result;
-            document.getElementById('a-revision').value = p.revision;
-            document.getElementById('a-note').value = p.note;
+            document.getElementById('a-result').value = p.result || '';
+            document.getElementById('a-revision').value = p.revision || '';
+            document.getElementById('a-note').value = p.note || '';
             const sSelect = document.getElementById('a-status');
             const allS = ["To do", "In Progress", "Review", "Revision Needed", "Retake", "Finalized"];
             sSelect.innerHTML = (currentUser === 'admin' ? allS : ["To do", "In Progress", "Review", "Retake"]).map(s => `<option value="${s}">${s}</option>`).join('');
@@ -279,6 +305,9 @@
                 document.getElementById('admin-delete-zone').classList.remove('hidden'); 
                 document.getElementById('admin-pj-zone').classList.remove('hidden'); 
                 document.getElementById('a-editor-select').value = p.editor;
+            } else {
+                document.getElementById('admin-delete-zone').classList.add('hidden'); 
+                document.getElementById('admin-pj-zone').classList.add('hidden'); 
             }
             openModal('modalAction');
         }
@@ -332,7 +361,7 @@
         function showDashboard() { document.getElementById('login-page').style.display = 'none'; document.getElementById('dashboard-page').style.display = 'block'; document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`; if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden'); refreshData(); }
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function toggleNoteField() { /* Logic tambahan */ }
+        function toggleNoteField() { }
     </script>
 </body>
 </html>
