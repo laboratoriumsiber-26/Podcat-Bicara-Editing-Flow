@@ -34,12 +34,8 @@
         .btn-main { background: var(--ios-blue); color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
         .btn-danger { background: var(--ios-red); color: white; border: none; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; width: 100%; }
         .pill { padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; }
-        
-        /* EFEK VISUAL SESUAI PERMINTAAN */
         .blink-red { animation: blinker 1s linear infinite !important; background-color: var(--ios-red) !important; color: white !important; }
         @keyframes blinker { 50% { opacity: 0.2; } }
-
-        /* Style tambahan untuk list hapus */
         .mgmt-list { margin: 10px 0; padding: 0; list-style: none; background: #fff; border-radius: 10px; }
         .mgmt-item { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 12px; align-items: center; }
         .mgmt-item:last-child { border-bottom: none; }
@@ -48,6 +44,10 @@
     </style>
 </head>
 <body>
+
+    <div id="loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.7); z-index:9999; justify-content:center; align-items:center;">
+        <b>🔄 Memuat Data Cloud...</b>
+    </div>
 
     <div id="login-page">
         <div class="login-card">
@@ -64,7 +64,10 @@
                 <h2 style="margin:0">Workflow Editing</h2>
                 <small id="user-info" style="color:#666"></small>
             </div>
-            <button class="btn-main" style="background:#8e8e93" onclick="handleLogout()">Logout</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-main" style="background:#555" onclick="loadDataFromCloud()"><i class="fa-solid fa-sync"></i> Sync</button>
+                <button class="btn-main" style="background:#8e8e93" onclick="handleLogout()">Logout</button>
+            </div>
         </div>
 
         <div class="analytics-section">
@@ -179,31 +182,83 @@
     </div>
 
     <script>
-        // MASUKKAN URL WEB APP ANDA DI SINI (PENTING!)
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztPNhlV5lAXTqmsWU7HBWWjpKs9tRyFvQis9IRtYrzm8CRz2RQefnwfySHOQ5k9_La/exec';
 
         let currentUser = null;
         let activeId = null;
 
-        let waReviewNumbers = localStorage.getItem('waReview') || "62812345678";
-        let waRetakeNumbers = localStorage.getItem('waRetake') || "62812345678";
-        let subjects = JSON.parse(localStorage.getItem('subjects')) || ["Heru Mudiyanto M,Pd", "Drs. Budi"];
-        let editors = JSON.parse(localStorage.getItem('editors')) || [{name: "Mohamad Ardan Fahrobi", wa: "628571234567"}];
-        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+        // Inisialisasi default
+        let waReviewNumbers = "62812345678";
+        let waRetakeNumbers = "62812345678";
+        let subjects = ["Heru Mudiyanto M,Pd", "Drs. Budi"];
+        let editors = [{name: "Mohamad Ardan Fahrobi", wa: "628571234567"}];
+        let projects = [];
 
-        window.onload = function() {
+        window.onload = async function() {
             const session = localStorage.getItem('podcastSession');
-            if (session) { currentUser = session; showDashboard(); }
+            if (session) { 
+                currentUser = session; 
+                await loadDataFromCloud(); // Ambil data cloud dulu
+                showDashboard(); 
+            }
         };
 
-        // PERBAIKAN LOGIN: Tambahkan .trim() agar spasi tidak membuat gagal
+        // --- FUNGSI BARU: AMBIL DATA DARI CLOUD ---
+        async function loadDataFromCloud() {
+            if(!SCRIPT_URL) return;
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const data = await response.json();
+                
+                // Update variabel global dengan data dari Cloud
+                if(data.projects) projects = data.projects;
+                if(data.editors) editors = data.editors;
+                if(data.subjects) subjects = data.subjects;
+                if(data.waReview) waReviewNumbers = data.waReview;
+                if(data.waRetake) waRetakeNumbers = data.waRetake;
+
+                // Simpan ke local sebagai cadangan
+                localStorage.setItem('projects', JSON.stringify(projects));
+                localStorage.setItem('editors', JSON.stringify(editors));
+                localStorage.setItem('subjects', JSON.stringify(subjects));
+                
+                renderTable();
+                syncDropdowns();
+            } catch (e) {
+                console.error("Gagal sinkron data cloud, menggunakan data lokal.");
+                // Fallback ke localStorage jika internet mati
+                projects = JSON.parse(localStorage.getItem('projects')) || [];
+            }
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        async function uploadToCloud() {
+            if(!SCRIPT_URL) return;
+            const payload = { 
+                projects: projects, 
+                editors: editors, 
+                subjects: subjects,
+                waReview: waReviewNumbers,
+                waRetake: waRetakeNumbers
+            };
+            try {
+                await fetch(SCRIPT_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify(payload) 
+                });
+            } catch(e) { console.error("Koneksi gagal saat upload", e); }
+        }
+
+        // LOGIKA LOGIN DAN DASHBOARD MILIK ANDA
         function handleLogin() {
             const u = document.getElementById('username').value.trim().toLowerCase();
             if(u === 'admin' || u === 'user') {
                 currentUser = u;
                 localStorage.setItem('podcastSession', u);
-                showDashboard();
-            } else { alert("Login gagal! Gunakan 'admin' atau 'user'"); }
+                loadDataFromCloud().then(() => showDashboard());
+            } else { alert("Login gagal!"); }
         }
 
         function handleLogout() { localStorage.removeItem('podcastSession'); location.reload(); }
@@ -225,27 +280,6 @@
             document.getElementById('a-editor-select').innerHTML = htmlEd;
             document.getElementById('f-subject').innerHTML = '<option value="">Semua Subject</option>' + htmlSub;
             document.getElementById('f-editor').innerHTML = '<option value="">Semua Editor</option>' + htmlEd;
-        }
-
-        // FUNGSI SINKRON KE CLOUD
-        async function uploadToCloud() {
-            if(!SCRIPT_URL) return;
-            console.log("Menyimpan ke Google Sheets...");
-            const payload = { 
-                projects: projects, 
-                editors: editors, 
-                subjects: subjects,
-                waReview: waReviewNumbers,
-                waRetake: waRetakeNumbers
-            };
-            try {
-                await fetch(SCRIPT_URL, { 
-                    method: 'POST', 
-                    mode: 'no-cors', 
-                    body: JSON.stringify(payload) 
-                });
-                console.log("Data berhasil disinkronkan ke Cloud!");
-            } catch(e) { console.error("Koneksi gagal", e); }
         }
 
         function renderTable() {
@@ -274,7 +308,6 @@
                     </tr>`;
                 }).join('');
             updateChart();
-            localStorage.setItem('projects', JSON.stringify(projects));
         }
 
         function getStatusColor(s) {
@@ -288,6 +321,7 @@
             }
         }
 
+        // FUNGSI MANAGEMENT
         function openManagement() {
             document.getElementById('wa-review-multi').value = waReviewNumbers;
             document.getElementById('wa-retake-multi').value = waRetakeNumbers;
@@ -319,13 +353,9 @@
         function saveManagement() {
             waReviewNumbers = document.getElementById('wa-review-multi').value;
             waRetakeNumbers = document.getElementById('wa-retake-multi').value;
-            localStorage.setItem('waReview', waReviewNumbers);
-            localStorage.setItem('waRetake', waRetakeNumbers);
-            localStorage.setItem('editors', JSON.stringify(editors));
-            localStorage.setItem('subjects', JSON.stringify(subjects));
             syncDropdowns();
-            uploadToCloud(); // Panggil simpan cloud
-            alert("Pengaturan Berhasil Disimpan & Sinkron Cloud");
+            uploadToCloud(); 
+            alert("Berhasil Disimpan & Sinkron Cloud");
             closeModal('modalManagement');
         }
 
@@ -373,7 +403,7 @@
             if(currentUser === 'admin') p.editor = document.getElementById('a-editor-select').value;
             closeModal('modalAction');
             renderTable();
-            uploadToCloud(); // Panggil simpan cloud
+            uploadToCloud();
         }
 
         function saveNewProject() {
@@ -391,7 +421,7 @@
             });
             closeModal('modalNewProject');
             renderTable();
-            uploadToCloud(); // Panggil simpan cloud
+            uploadToCloud();
         }
 
         function deleteProject() { if(confirm("Hapus project?")) { projects = projects.filter(x => x.id !== activeId); closeModal('modalAction'); renderTable(); uploadToCloud(); } }
