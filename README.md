@@ -193,15 +193,34 @@
             const session = localStorage.getItem('podcastSession');
             if (session) { currentUser = session; showDashboard(); }
         };
-
-        function handleLogin() {
+function handleLogin() {
             const u = document.getElementById('username').value.toLowerCase();
-            if(u === 'admin' || u === 'user') {
-                currentUser = u;
-                localStorage.setItem('podcastSession', u);
+            const p = document.getElementById('password').value;
+
+            // KUSTOMISASI PASSWORD DI SINI
+            const ADMIN_PASS = "RAHASIA_ADMIN"; // Silakan ganti ini
+            const USER_PASS = "RAHASIA_USER";   // Silakan ganti ini
+
+            if (u === 'admin' && p === ADMIN_PASS) {
+                currentUser = 'admin';
+                localStorage.setItem('podcastSession', 'admin');
                 showDashboard();
-            } else { alert("Login gagal!"); }
+            } else if (u === 'user' && p === USER_PASS) {
+                currentUser = 'user';
+                localStorage.setItem('podcastSession', 'user');
+                showDashboard();
+            } else {
+                alert("Username atau Password salah!");
+            }
         }
+
+        function handleLogout() { localStorage.removeItem('podcastSession'); location.reload(); }
+        function showDashboard() { document.getElementById('login-page').style.display = 'none'; document.getElementById('dashboard-page').style.display = 'block'; document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`; if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden'); refreshData(); }
+        function openModal(id) { document.getElementById(id).style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    </script>
+</body>
+</html>
 
         function handleLogout() { localStorage.removeItem('podcastSession'); location.reload(); }
 
