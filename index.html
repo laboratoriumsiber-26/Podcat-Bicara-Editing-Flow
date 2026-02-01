@@ -174,11 +174,16 @@
         <div class="modal-content">
             <h3 id="a-title-display">Project Detail</h3>
             <div class="input-group"><label>Project Title</label><input type="text" id="a-title-readonly" readonly></div>
-            <div class="input-group"><label>Status</label><select id="a-status" onchange="toggleNoteField()"></select></div>
+            
+            <div class="input-group"><label>Deadline</label><input type="date" id="a-deadline"></div>
+            
+            <div class="input-group"><label>Status</label><select id="a-status"></select></div>
             <div class="input-group"><label>Link Result</label><input type="text" id="a-result"></div>
             <div class="input-group"><label>Link Revision</label><input type="text" id="a-revision"></div>
             <div class="input-group"><label>Note / Catatan</label><textarea id="a-note" style="height: 100px;"></textarea></div>
-            <div id="admin-pj-zone" class="hidden"><label>Ganti Editor PJ</label><select id="a-editor-select"></select></div>
+            
+            <div id="admin-pj-zone" class="hidden"><label>Ganti Editor</label><select id="a-editor-select"></select></div>
+            
             <button class="btn-main" style="width:100%; margin-top:10px" onclick="saveAction()">Simpan Update</button>
             <div id="admin-delete-zone" class="hidden"><button class="btn-danger" onclick="deleteProject()">Hapus Project</button></div>
             <button class="btn-main" style="width:100%; background:#888; margin-top:10px" onclick="closeModal('modalAction')">Tutup</button>
@@ -186,7 +191,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoB-ar6y8AfG_ZjeFNy69LFg0bC6a9YTtv80CrdJNoEPr-KuKx4YMCsQJFGAAlcS_M/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymZKoflYA7keH0TIymNYKB9elkItL-9Up4DBw0hhlrn7Ir0KVFKhB9MWfXN_yKo9m8/exec';
 
         let currentUser = null, activeRowIndex = null, projects = [], editors = [], subjects = [], waReview = "", waRetake = "";
 
@@ -202,7 +207,6 @@
             try {
                 const resp = await fetch(SCRIPT_URL);
                 const data = await resp.json();
-                // r[0]=Title, r[1]=Subject, r[2]=Editor, r[3]=Deadline, r[4]=Status, r[5]=Material, r[6]=RAW, r[7]=Result, r[8]=Revision, r[9]=Note
                 projects = data.projects.slice(1).map((r, i) => ({ 
                     rowIndex: i + 2, 
                     title: r[0], subject: r[1], editor: r[2], deadline: r[3], 
@@ -230,18 +234,10 @@
                     <td>${p.editor}</td>
                     <td>${p.deadline}</td>
                     <td><span class="pill ${p.status === 'Revision Needed' ? 'blink-red' : ''}" style="background:${getStatusColor(p.status)}; color:white">${p.status}</span></td>
-                    <td>
-                        <div style="display:flex; gap:10px">
-                            <a href="${p.raw}" target="_blank" title="RAW Link"><i class="fa-solid fa-link"></i></a>
-                        </div>
-                    </td>
-                    <td>
-                         ${p.result && p.result !== '-' ? `<a href="${p.result}" target="_blank" title="Result" style="color:var(--ios-green)"><i class="fa-solid fa-play-circle"></i></a>` : '-'}
-                    </td>
-                    <td>
-                         ${p.revision && p.revision !== '-' ? `<a href="${p.revision}" target="_blank" title="Revision" style="color:var(--ios-red)"><i class="fa-solid fa-rotate-left"></i></a>` : '-'}
-                    </td>
-                    <td><small title="${p.note}">${p.note || '-'}</small></td>
+                    <td><a href="${p.raw}" target="_blank"><i class="fa-solid fa-link"></i></a></td>
+                    <td>${p.result && p.result !== '-' ? `<a href="${p.result}" target="_blank" style="color:var(--ios-green)"><i class="fa-solid fa-play-circle"></i></a>` : '-'}</td>
+                    <td>${p.revision && p.revision !== '-' ? `<a href="${p.revision}" target="_blank" style="color:var(--ios-red)"><i class="fa-solid fa-rotate-left"></i></a>` : '-'}</td>
+                    <td><small>${p.note || '-'}</small></td>
                     <td><button onclick="openAction(${p.rowIndex})"><i class="fa-solid fa-pen-to-square"></i></button></td>
                 </tr>
             `).join('');
@@ -261,6 +257,7 @@
             const payload = { 
                 action:'UPDATE', 
                 rowIndex: activeRowIndex, 
+                deadline: document.getElementById('a-deadline').value, // Simpan deadline baru
                 status: document.getElementById('a-status').value, 
                 result: document.getElementById('a-result').value, 
                 revision: document.getElementById('a-revision').value, 
@@ -273,6 +270,35 @@
             setTimeout(refreshData, 1500);
         }
 
+        function openAction(rowIndex) {
+            activeRowIndex = rowIndex;
+            const p = projects.find(x => x.rowIndex === rowIndex);
+            document.getElementById('a-title-readonly').value = p.title;
+            
+            // Masukkan deadline lama ke input date
+            document.getElementById('a-deadline').value = p.deadline; 
+            
+            document.getElementById('a-result').value = p.result || '';
+            document.getElementById('a-revision').value = p.revision || '';
+            document.getElementById('a-note').value = p.note || '';
+            
+            const sSelect = document.getElementById('a-status');
+            const allS = ["To do", "In Progress", "Review", "Revision Needed", "Retake", "Finalized"];
+            sSelect.innerHTML = (currentUser === 'admin' ? allS : ["To do", "In Progress", "Review", "Retake"]).map(s => `<option value="${s}">${s}</option>`).join('');
+            sSelect.value = p.status;
+
+            if(currentUser === 'admin') { 
+                document.getElementById('admin-delete-zone').classList.remove('hidden'); 
+                document.getElementById('admin-pj-zone').classList.remove('hidden'); 
+                document.getElementById('a-editor-select').value = p.editor;
+            } else {
+                document.getElementById('admin-delete-zone').classList.add('hidden'); 
+                document.getElementById('admin-pj-zone').classList.add('hidden'); 
+            }
+            openModal('modalAction');
+        }
+
+        // --- Fungsi lainnya tetap sama ---
         async function saveManagement() {
             const payload = { action:'SAVE_MGMT', editors, subjects, waReview: document.getElementById('wa-review-multi').value, waRetake: document.getElementById('wa-retake-multi').value };
             toggleLoading(true);
@@ -288,28 +314,6 @@
                 closeModal('modalAction');
                 setTimeout(refreshData, 1500);
             }
-        }
-
-        function openAction(rowIndex) {
-            activeRowIndex = rowIndex;
-            const p = projects.find(x => x.rowIndex === rowIndex);
-            document.getElementById('a-title-readonly').value = p.title;
-            document.getElementById('a-result').value = p.result || '';
-            document.getElementById('a-revision').value = p.revision || '';
-            document.getElementById('a-note').value = p.note || '';
-            const sSelect = document.getElementById('a-status');
-            const allS = ["To do", "In Progress", "Review", "Revision Needed", "Retake", "Finalized"];
-            sSelect.innerHTML = (currentUser === 'admin' ? allS : ["To do", "In Progress", "Review", "Retake"]).map(s => `<option value="${s}">${s}</option>`).join('');
-            sSelect.value = p.status;
-            if(currentUser === 'admin') { 
-                document.getElementById('admin-delete-zone').classList.remove('hidden'); 
-                document.getElementById('admin-pj-zone').classList.remove('hidden'); 
-                document.getElementById('a-editor-select').value = p.editor;
-            } else {
-                document.getElementById('admin-delete-zone').classList.add('hidden'); 
-                document.getElementById('admin-pj-zone').classList.add('hidden'); 
-            }
-            openModal('modalAction');
         }
 
         function openManagement() {
@@ -361,7 +365,6 @@
         function showDashboard() { document.getElementById('login-page').style.display = 'none'; document.getElementById('dashboard-page').style.display = 'block'; document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`; if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden'); refreshData(); }
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function toggleNoteField() { }
     </script>
 </body>
 </html>
