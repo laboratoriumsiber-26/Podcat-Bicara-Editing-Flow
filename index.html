@@ -140,160 +140,209 @@
 
     <script>
         // MASUKKAN URL WEB APP ANDA DI SINI
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztPNhlV5lAXTqmsWU7HBWWjpKs9tRyFvQis9IRtYrzm8CRz2RQefnwfySHOQ5k9_La/exec';
+<script>
+    // MASUKKAN URL WEB APP ANDA DI SINI
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztPNhlV5lAXTqmsWU7HBWWjpKs9tRyFvQis9IRtYrzm8CRz2RQefnwfySHOQ5k9_La/exec';
 
-        let currentUser = null;
-        let activeId = null;
+    let currentUser = null;
+    let activeId = null;
 
-        let subjects = JSON.parse(localStorage.getItem('subjects')) || ["Heru Mudiyanto M,Pd", "Drs. Budi"];
-        let editors = JSON.parse(localStorage.getItem('editors')) || [{name: "Mohamad Ardan Fahrobi", wa: "62857"}];
-        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+    let subjects = JSON.parse(localStorage.getItem('subjects')) || ["Heru Mudiyanto M,Pd", "Drs. Budi"];
+    let editors = JSON.parse(localStorage.getItem('editors')) || [{name: "Mohamad Ardan Fahrobi", wa: "62857"}];
+    let projects = JSON.parse(localStorage.getItem('projects')) || [];
 
-        window.onload = () => {
-            const sess = localStorage.getItem('podcastSession');
-            if(sess) { currentUser = sess; showDashboard(); }
+    window.onload = () => {
+        const sess = localStorage.getItem('podcastSession');
+        if(sess) { currentUser = sess; showDashboard(); }
+    };
+
+    function handleLogin() {
+        const u = document.getElementById('username').value.toLowerCase();
+        if(u === 'admin' || u === 'user') {
+            currentUser = u; localStorage.setItem('podcastSession', u); showDashboard();
+        } else alert("Login salah!");
+    }
+
+    function handleLogout() { localStorage.removeItem('podcastSession'); location.reload(); }
+
+    function showDashboard() {
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('dashboard-page').style.display = 'block';
+        document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`;
+        if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden');
+        syncDropdowns(); renderTable();
+    }
+
+    function syncDropdowns() {
+        const sOpt = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+        const eOpt = editors.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+        document.getElementById('f-subject').innerHTML = '<option value="">Semua Subject</option>' + sOpt;
+        document.getElementById('f-editor').innerHTML = '<option value="">Semua Editor</option>' + eOpt;
+        document.getElementById('n-subject').innerHTML = sOpt;
+        document.getElementById('n-editor').innerHTML = eOpt;
+        document.getElementById('a-editor-select').innerHTML = eOpt;
+    }
+
+    // FUNGSI UTAMA UNTUK KIRIM KE GOOGLE SHEETS
+    async function uploadToCloud() {
+        console.log("Menyinkronkan ke Cloud...");
+        const data = { 
+            projects: projects, 
+            editors: editors, 
+            subjects: subjects 
         };
-
-        function handleLogin() {
-            const u = document.getElementById('username').value.toLowerCase();
-            if(u === 'admin' || u === 'user') {
-                currentUser = u; localStorage.setItem('podcastSession', u); showDashboard();
-            } else alert("Login salah!");
-        }
-
-        function handleLogout() { localStorage.removeItem('podcastSession'); location.reload(); }
-
-        function showDashboard() {
-            document.getElementById('login-page').style.display = 'none';
-            document.getElementById('dashboard-page').style.display = 'block';
-            document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`;
-            if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden');
-            syncDropdowns(); renderTable();
-        }
-
-        function syncDropdowns() {
-            const sOpt = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
-            const eOpt = editors.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
-            document.getElementById('f-subject').innerHTML = '<option value="">Semua Subject</option>' + sOpt;
-            document.getElementById('f-editor').innerHTML = '<option value="">Semua Editor</option>' + eOpt;
-            document.getElementById('n-subject').innerHTML = sOpt;
-            document.getElementById('n-editor').innerHTML = eOpt;
-            document.getElementById('a-editor-select').innerHTML = eOpt;
-        }
-
-        async function uploadToCloud() {
-            console.log("Syncing to Cloud...");
-            const data = { 
-                projects: JSON.parse(localStorage.getItem('projects')) || [], 
-                editors: JSON.parse(localStorage.getItem('editors')) || [], 
-                subjects: JSON.parse(localStorage.getItem('subjects')) || [] 
-            };
-            try {
-                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-                console.log("Cloud Sync Success!");
-            } catch(e) { console.error("Cloud Sync Failed", e); }
-        }
-
-        function renderTable() {
-            const fs = document.getElementById('f-subject').value;
-            const fe = document.getElementById('f-editor').value;
-            const tbody = document.getElementById('main-table-body');
-            
-            tbody.innerHTML = projects
-                .filter(p => (!fs || p.subject === fs) && (!fe || p.editor === fe))
-                .map(p => `
-                    <tr>
-                        <td><b>${p.title}</b></td>
-                        <td>${p.subject}</td><td>${p.editor}</td><td>${p.deadline}</td>
-                        <td><span class="pill" style="background:${getColor(p.status)}">${p.status}</span></td>
-                        <td>${p.material ? `<a href="${p.material}" target="_blank">Link</a>` : '-'}</td>
-                        <td>${p.raw ? `<a href="${p.raw}" target="_blank">Link</a>` : '-'}</td>
-                        <td>${p.result ? `<a href="${p.result}" target="_blank">Video</a>` : '-'}</td>
-                        <td>${p.revision ? `<a href="${p.revision}" target="_blank">Revisi</a>` : '-'}</td>
-                        <td><small>${p.note || '-'}</small></td>
-                        <td><button onclick="openAction(${p.id})">Edit</button></td>
-                    </tr>`).join('');
-            
-            localStorage.setItem('projects', JSON.stringify(projects));
-            updateChart();
-        }
-
-        function saveNewProject() {
-            projects.push({
-                id: Date.now(), title: document.getElementById('n-title').value,
-                subject: document.getElementById('n-subject').value, editor: document.getElementById('n-editor').value,
-                deadline: document.getElementById('n-deadline').value, material: document.getElementById('n-mat').value,
-                raw: document.getElementById('n-raw').value, status: 'To do', note: '', result: '', revision: ''
+        try {
+            await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                mode: 'no-cors', 
+                body: JSON.stringify(data) 
             });
-            closeModal('modalNewProject'); renderTable(); uploadToCloud();
+            console.log("Berhasil Terkirim ke Spreadsheet!");
+        } catch(e) { 
+            console.error("Gagal mengirim ke Cloud", e); 
         }
+    }
 
-        function openAction(id) {
-            activeId = id; const p = projects.find(x => x.id === id);
-            document.getElementById('a-status').value = p.status;
-            document.getElementById('a-result').value = p.result || '';
-            document.getElementById('a-revision').value = p.revision || '';
-            document.getElementById('a-note').value = p.note || '';
-            if(currentUser === 'admin') {
-                document.getElementById('admin-pj-zone').classList.remove('hidden');
-                document.getElementById('admin-delete-zone').classList.remove('hidden');
-                document.getElementById('a-editor-select').value = p.editor;
-            }
-            openModal('modalAction');
+    function renderTable() {
+        const fs = document.getElementById('f-subject').value;
+        const fe = document.getElementById('f-editor').value;
+        const tbody = document.getElementById('main-table-body');
+        
+        tbody.innerHTML = projects
+            .filter(p => (!fs || p.subject === fs) && (!fe || p.editor === fe))
+            .map(p => `
+                <tr>
+                    <td><b>${p.title}</b></td>
+                    <td>${p.subject}</td><td>${p.editor}</td><td>${p.deadline}</td>
+                    <td><span class="pill" style="background:${getColor(p.status)}">${p.status}</span></td>
+                    <td>${p.material ? `<a href="${p.material}" target="_blank">Link</a>` : '-'}</td>
+                    <td>${p.raw ? `<a href="${p.raw}" target="_blank">Link</a>` : '-'}</td>
+                    <td>${p.result ? `<a href="${p.result}" target="_blank">Video</a>` : '-'}</td>
+                    <td>${p.revision ? `<a href="${p.revision}" target="_blank">Revisi</a>` : '-'}</td>
+                    <td><small>${p.note || '-'}</small></td>
+                    <td><button onclick="openAction(${p.id})">Edit</button></td>
+                </tr>`).join('');
+        
+        localStorage.setItem('projects', JSON.stringify(projects));
+        updateChart();
+    }
+
+    // MEMPERBAIKI FUNGSI SIMPAN PROJECT BARU
+    function saveNewProject() {
+        const title = document.getElementById('n-title').value;
+        if(!title) return alert("Judul tidak boleh kosong!");
+
+        projects.push({
+            id: Date.now(), 
+            title: title,
+            subject: document.getElementById('n-subject').value, 
+            editor: document.getElementById('n-editor').value,
+            deadline: document.getElementById('n-deadline').value, 
+            material: document.getElementById('n-mat').value,
+            raw: document.getElementById('n-raw').value, 
+            status: 'To do', 
+            note: '', 
+            result: '', 
+            revision: ''
+        });
+
+        closeModal('modalNewProject'); 
+        renderTable(); 
+        uploadToCloud(); // Memanggil fungsi yang benar
+    }
+
+    function openAction(id) {
+        activeId = id; const p = projects.find(x => x.id === id);
+        document.getElementById('a-status').value = p.status;
+        document.getElementById('a-result').value = p.result || '';
+        document.getElementById('a-revision').value = p.revision || '';
+        document.getElementById('a-note').value = p.note || '';
+        if(currentUser === 'admin') {
+            document.getElementById('admin-pj-zone').classList.remove('hidden');
+            document.getElementById('admin-delete-zone').classList.remove('hidden');
+            document.getElementById('a-editor-select').value = p.editor;
         }
+        openModal('modalAction');
+    }
 
-        function saveAction() {
-            const p = projects.find(x => x.id === activeId);
-            p.status = document.getElementById('a-status').value;
-            p.result = document.getElementById('a-result').value;
-            p.revision = document.getElementById('a-revision').value;
-            p.note = document.getElementById('a-note').value;
-            if(currentUser === 'admin') p.editor = document.getElementById('a-editor-select').value;
-            closeModal('modalAction'); renderTable(); uploadToCloud();
+    function saveAction() {
+        const p = projects.find(x => x.id === activeId);
+        p.status = document.getElementById('a-status').value;
+        p.result = document.getElementById('a-result').value;
+        p.revision = document.getElementById('a-revision').value;
+        p.note = document.getElementById('a-note').value;
+        if(currentUser === 'admin') p.editor = document.getElementById('a-editor-select').value;
+        
+        closeModal('modalAction'); 
+        renderTable(); 
+        uploadToCloud(); // Memanggil fungsi yang benar
+    }
+
+    function deleteProject() {
+        if(confirm("Hapus project ini?")) {
+            projects = projects.filter(x => x.id !== activeId);
+            closeModal('modalAction'); 
+            renderTable(); 
+            uploadToCloud();
         }
+    }
 
-        function deleteProject() {
-            if(confirm("Hapus project ini?")) {
-                projects = projects.filter(x => x.id !== activeId);
-                closeModal('modalAction'); renderTable(); uploadToCloud();
-            }
-        }
+    function openManagement() { renderMgmt(); openModal('modalManagement'); }
+    function renderMgmt() {
+        document.getElementById('list-editor-del').innerHTML = editors.map((e,i) => `<div class="mgmt-item">${e.name} <button onclick="delEd(${i})">X</button></div>`).join('');
+        document.getElementById('list-subject-del').innerHTML = subjects.map((s,i) => `<div class="mgmt-item">${s} <button onclick="delSub(${i})">X</button></div>`).join('');
+    }
+    function addEditor() { 
+        const n=document.getElementById('m-name').value;
+        const w=document.getElementById('m-wa').value; 
+        if(n){ editors.push({name:n, wa:w}); renderMgmt(); } 
+    }
+    function addSubject() { 
+        const s=document.getElementById('m-sub').value; 
+        if(s){ subjects.push(s); renderMgmt(); } 
+    }
+    function delEd(i) { editors.splice(i,1); renderMgmt(); }
+    function delSub(i) { subjects.splice(i,1); renderMgmt(); }
 
-        function openManagement() { renderMgmt(); openModal('modalManagement'); }
-        function renderMgmt() {
-            document.getElementById('list-editor-del').innerHTML = editors.map((e,i) => `<div class="mgmt-item">${e.name} <button onclick="delEd(${i})">X</button></div>`).join('');
-            document.getElementById('list-subject-del').innerHTML = subjects.map((s,i) => `<div class="mgmt-item">${s} <button onclick="delSub(${i})">X</button></div>`).join('');
-        }
-        function addEditor() { const n=document.getElementById('m-name').value, w=document.getElementById('m-wa').value; if(n){editors.push({name:n, wa:w}); renderMgmt();} }
-        function addSubject() { const s=document.getElementById('m-sub').value; if(s){subjects.push(s); renderMgmt();} }
-        function delEd(i) { editors.splice(i,1); renderMgmt(); }
-        function delSub(i) { subjects.splice(i,1); renderMgmt(); }
+    function saveManagement() {
+        localStorage.setItem('editors', JSON.stringify(editors));
+        localStorage.setItem('subjects', JSON.stringify(subjects));
+        syncDropdowns(); 
+        uploadToCloud(); 
+        closeModal('modalManagement');
+        alert("Data Management Berhasil Disinkronkan!");
+    }
 
-        function saveManagement() {
-            localStorage.setItem('editors', JSON.stringify(editors));
-            localStorage.setItem('subjects', JSON.stringify(subjects));
-            syncDropdowns(); uploadToCloud(); closeModal('modalManagement');
-            alert("Data Management Disinkronkan!");
-        }
+    function getColor(s) {
+        const c = {'To do':'#888','In Progress':'#FFCC00','Finalized':'#34C759','Revision Needed':'#FF3B30','Review':'#007AFF','Retake':'#FF9500'};
+        return c[s] || '#000';
+    }
 
-        function getColor(s) {
-            const c = {'To do':'#888','In Progress':'var(--ios-yellow)','Finalized':'var(--ios-green)','Revision Needed':'var(--ios-red)','Review':'var(--ios-blue)','Retake':'#FFCC00'};
-            return c[s] || '#000';
-        }
+    function updateChart() {
+        const s = { 
+            todo: projects.filter(x=>x.status==='To do').length, 
+            progress: projects.filter(x=>x.status==='In Progress').length, 
+            final: projects.filter(x=>x.status==='Finalized').length 
+        };
+        document.getElementById('stat-total').innerText = projects.length;
+        document.getElementById('stat-todo').innerText = s.todo;
+        document.getElementById('stat-progress').innerText = s.progress;
+        document.getElementById('stat-final').innerText = s.final;
+        
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        if(window.myChart) window.myChart.destroy();
+        window.myChart = new Chart(ctx, { 
+            type:'doughnut', 
+            data:{ 
+                datasets:[{data:[s.todo, s.progress, s.final], backgroundColor:['#007AFF','#FFCC00','#34C759']}] 
+            }, 
+            options:{maintainAspectRatio:false}
+        });
+    }
 
-        function updateChart() {
-            const s = { todo: projects.filter(x=>x.status==='To do').length, progress: projects.filter(x=>x.status==='In Progress').length, final: projects.filter(x=>x.status==='Finalized').length };
-            document.getElementById('stat-total').innerText = projects.length;
-            document.getElementById('stat-todo').innerText = s.todo;
-            document.getElementById('stat-progress').innerText = s.progress;
-            document.getElementById('stat-final').innerText = s.final;
-            const ctx = document.getElementById('statusChart').getContext('2d');
-            if(window.myChart) window.myChart.destroy();
-            window.myChart = new Chart(ctx, { type:'doughnut', data:{ datasets:[{data:[s.todo, s.progress, s.final], backgroundColor:['#007AFF','#FFCC00','#34C759']}] }, options:{maintainAspectRatio:false}});
-        }
-
-        function openModal(id) { document.getElementById(id).style.display = 'block'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    </script>
+    function openModal(id) { document.getElementById(id).style.display = 'block'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+</script>
 </body>
 </html>
+
