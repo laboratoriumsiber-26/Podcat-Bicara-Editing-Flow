@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Podcast Bicara - Workflow Management</title>
+    <title>Podcast Bicara - Fixed Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -39,6 +39,7 @@
     <div id="login-page">
         <div class="login-card">
             <h2 style="margin-top:0">Podcast Bicara</h2>
+            <p style="font-size: 12px; color: #666;">Gunakan "admin" atau "user"</p>
             <input type="text" id="username" placeholder="Username">
             <input type="password" id="password" placeholder="Password" style="margin-top:10px">
             <button class="btn-main" style="width:100%; margin-top:20px" onclick="handleLogin()">Sign In</button>
@@ -149,7 +150,7 @@
         let currentUser = null;
         let activeId = null;
 
-        // Load Data dari LocalStorage atau Gunakan Default
+        // Load Data
         let subjects = JSON.parse(localStorage.getItem('subjects')) || ["Heru Mudiyanto M,Pd", "Drs. Budi"];
         let editors = JSON.parse(localStorage.getItem('editors')) || [{name: "Mohamad Ardan Fahrobi", wa: "62857"}];
         let projects = JSON.parse(localStorage.getItem('projects')) || [];
@@ -159,11 +160,16 @@
             if(sess) { currentUser = sess; showDashboard(); }
         };
 
+        // FIXED LOGIN FUNCTION
         function handleLogin() {
-            const u = document.getElementById('username').value.toLowerCase();
-            if(u === 'admin' || u === 'user') {
-                currentUser = u; localStorage.setItem('podcastSession', u); showDashboard();
-            } else alert("Login salah!");
+            const userIn = document.getElementById('username').value.trim().toLowerCase();
+            if(userIn === 'admin' || userIn === 'user') {
+                currentUser = userIn; 
+                localStorage.setItem('podcastSession', userIn); 
+                showDashboard();
+            } else { 
+                alert("Login gagal! Pastikan username adalah 'admin' atau 'user'"); 
+            }
         }
 
         function handleLogout() { localStorage.removeItem('podcastSession'); location.reload(); }
@@ -172,7 +178,13 @@
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('dashboard-page').style.display = 'block';
             document.getElementById('user-info').innerText = `Logged in as: ${currentUser.toUpperCase()}`;
-            if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden');
+            
+            if(currentUser === 'user') {
+                document.getElementById('admin-controls').style.display = 'none';
+            } else {
+                document.getElementById('admin-controls').style.display = 'flex';
+            }
+            
             syncDropdowns(); renderTable();
         }
 
@@ -186,18 +198,11 @@
             document.getElementById('a-editor-select').innerHTML = eOpt;
         }
 
-        // FUNGSI SINKRONISASI KE GOOGLE SHEETS
         async function uploadToCloud() {
-            console.log("Syncing...");
-            const data = { 
-                projects: projects, 
-                editors: editors, 
-                subjects: subjects 
-            };
+            const data = { projects, editors, subjects };
             try {
                 await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-                console.log("Cloud Sync Success!");
-            } catch(e) { console.error("Cloud Sync Failed", e); }
+            } catch(e) { console.error("Sync Error", e); }
         }
 
         function renderTable() {
@@ -212,10 +217,10 @@
                         <td><b>${p.title}</b></td>
                         <td>${p.subject}</td><td>${p.editor}</td><td>${p.deadline}</td>
                         <td><span class="pill" style="background:${getColor(p.status)}">${p.status}</span></td>
-                        <td>${p.material ? `<a href="${p.material}" target="_blank"><i class="fa-solid fa-folder"></i></a>` : '-'}</td>
-                        <td>${p.raw ? `<a href="${p.raw}" target="_blank"><i class="fa-solid fa-link"></i></a>` : '-'}</td>
-                        <td>${p.result ? `<a href="${p.result}" target="_blank"><i class="fa-solid fa-play"></i></a>` : '-'}</td>
-                        <td>${p.revision ? `<a href="${p.revision}" target="_blank"><i class="fa-solid fa-rotate"></i></a>` : '-'}</td>
+                        <td>${p.material ? `<a href="${p.material}" target="_blank">Folder</a>` : '-'}</td>
+                        <td>${p.raw ? `<a href="${p.raw}" target="_blank">Link</a>` : '-'}</td>
+                        <td>${p.result ? `<a href="${p.result}" target="_blank">Play</a>` : '-'}</td>
+                        <td>${p.revision ? `<a href="${p.revision}" target="_blank">Rev</a>` : '-'}</td>
                         <td><small>${p.note || '-'}</small></td>
                         <td><button onclick="openAction(${p.id})">Edit</button></td>
                     </tr>`).join('');
@@ -224,29 +229,20 @@
             updateChart();
         }
 
-        // FUNGSI SIMPAN PROJECT BARU (TELAH DIPERBAIKI)
         function saveNewProject() {
             const title = document.getElementById('n-title').value;
-            if(!title) return alert("Judul tidak boleh kosong!");
-
+            if(!title) return alert("Isi judul!");
             projects.push({
-                id: Date.now(), 
-                title: title,
+                id: Date.now(), title,
                 subject: document.getElementById('n-subject').value, 
                 editor: document.getElementById('n-editor').value,
                 deadline: document.getElementById('n-deadline').value, 
                 material: document.getElementById('n-mat').value,
                 raw: document.getElementById('n-raw').value, 
-                status: 'To do', 
-                note: '', 
-                result: '', 
-                revision: ''
+                status: 'To do', note: '', result: '', revision: ''
             });
-
             closeModal('modalNewProject');
-            document.getElementById('n-title').value = ''; // Reset input
-            renderTable(); 
-            uploadToCloud();
+            renderTable(); uploadToCloud();
         }
 
         function openAction(id) {
@@ -255,6 +251,7 @@
             document.getElementById('a-result').value = p.result || '';
             document.getElementById('a-revision').value = p.revision || '';
             document.getElementById('a-note').value = p.note || '';
+            
             if(currentUser === 'admin') {
                 document.getElementById('admin-pj-zone').classList.remove('hidden');
                 document.getElementById('admin-delete-zone').classList.remove('hidden');
@@ -273,25 +270,17 @@
             p.revision = document.getElementById('a-revision').value;
             p.note = document.getElementById('a-note').value;
             if(currentUser === 'admin') p.editor = document.getElementById('a-editor-select').value;
-            
-            closeModal('modalAction'); 
-            renderTable(); 
-            uploadToCloud();
+            closeModal('modalAction'); renderTable(); uploadToCloud();
         }
 
         function deleteProject() {
-            if(confirm("Hapus project ini secara permanen?")) {
-                projects = projects.filter(x => x.id !== activeId);
-                closeModal('modalAction'); 
-                renderTable(); 
-                uploadToCloud();
-            }
+            if(confirm("Hapus?")) { projects = projects.filter(x => x.id !== activeId); closeModal('modalAction'); renderTable(); uploadToCloud(); }
         }
 
         function openManagement() { renderMgmt(); openModal('modalManagement'); }
         function renderMgmt() {
-            document.getElementById('list-editor-del').innerHTML = editors.map((e,i) => `<div class="mgmt-item"><span>${e.name}</span> <button onclick="delEd(${i})" style="color:red; border:none; background:none; cursor:pointer">X</button></div>`).join('');
-            document.getElementById('list-subject-del').innerHTML = subjects.map((s,i) => `<div class="mgmt-item"><span>${s}</span> <button onclick="delSub(${i})" style="color:red; border:none; background:none; cursor:pointer">X</button></div>`).join('');
+            document.getElementById('list-editor-del').innerHTML = editors.map((e,i) => `<div class="mgmt-item">${e.name} <button onclick="delEd(${i})">X</button></div>`).join('');
+            document.getElementById('list-subject-del').innerHTML = subjects.map((s,i) => `<div class="mgmt-item">${s} <button onclick="delSub(${i})">X</button></div>`).join('');
         }
         function addEditor() { const n=document.getElementById('m-name').value, w=document.getElementById('m-wa').value; if(n){editors.push({name:n, wa:w}); renderMgmt();} }
         function addSubject() { const s=document.getElementById('m-sub').value; if(s){subjects.push(s); renderMgmt();} }
@@ -302,7 +291,7 @@
             localStorage.setItem('editors', JSON.stringify(editors));
             localStorage.setItem('subjects', JSON.stringify(subjects));
             syncDropdowns(); uploadToCloud(); closeModal('modalManagement');
-            alert("Pengaturan Berhasil Disimpan & Sinkron Cloud!");
+            alert("Updated!");
         }
 
         function getColor(s) {
@@ -311,11 +300,7 @@
         }
 
         function updateChart() {
-            const s = { 
-                todo: projects.filter(x=>x.status==='To do').length, 
-                progress: projects.filter(x=>x.status==='In Progress').length, 
-                final: projects.filter(x=>x.status==='Finalized').length 
-            };
+            const s = { todo: projects.filter(x=>x.status==='To do').length, progress: projects.filter(x=>x.status==='In Progress').length, final: projects.filter(x=>x.status==='Finalized').length };
             document.getElementById('stat-total').innerText = projects.length;
             document.getElementById('stat-todo').innerText = s.todo;
             document.getElementById('stat-progress').innerText = s.progress;
