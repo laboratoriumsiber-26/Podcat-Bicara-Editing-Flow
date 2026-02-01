@@ -40,7 +40,6 @@
         .input-group { margin-bottom: 12px; }
         label { font-size: 11px; font-weight: bold; color: #888; display: block; margin-bottom: 5px; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        input:disabled, textarea:disabled, select:disabled { background-color: #f5f5f7; color: #888; }
         
         .btn-main { background: var(--ios-blue); color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
         .btn-danger { background: var(--ios-red); color: white; border: none; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; width: 100%; }
@@ -51,7 +50,7 @@
 
         .mgmt-list { margin: 10px 0; padding: 0; list-style: none; background: #fff; border-radius: 10px; }
         .mgmt-item { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 12px; align-items: center; }
-        .del-btn { color: var(--ios-red); cursor: pointer; }
+        .del-btn { color: var(--ios-red); cursor: pointer; border: none; background: none; }
         .hidden { display: none; }
     </style>
 </head>
@@ -59,7 +58,7 @@
 
     <div id="loading-screen">
         <div class="spinner"></div>
-        <p style="margin-top:15px; font-size:13px; color:#666">Sinkronisasi Spreadsheet...</p>
+        <p style="margin-top:15px; font-size:13px; color:#666">Syncing Spreadsheet...</p>
     </div>
 
     <div id="login-page">
@@ -74,7 +73,7 @@
     <div id="dashboard-page">
         <div class="header-bar">
             <div>
-                <h2 style="margin:0">Workflow Editing</h2>
+                <h2 style="margin:0">Workflow Production</h2>
                 <small id="user-info" style="color:#666"></small>
             </div>
             <div style="display:flex; gap:10px">
@@ -117,27 +116,35 @@
 
     <div id="modalManagement" class="modal">
         <div class="modal-content">
-            <h3>Management & WA</h3>
+            <h3>Management & WA Settings</h3>
             <div style="background:#f0f0f7; padding:15px; border-radius:15px; margin-bottom:15px">
-                <label>Nomor WA Admin (REVIEW)</label>
-                <input type="text" id="wa-review-input">
-                <label style="margin-top:10px">Nomor WA Admin (RETAKE)</label>
-                <input type="text" id="wa-retake-input">
+                <label>WA Admin (REVIEW)</label>
+                <input type="text" id="wa-review-multi" placeholder="62812...">
+                <label style="margin-top:10px">WA Admin (RETAKE)</label>
+                <input type="text" id="wa-retake-multi" placeholder="62812...">
             </div>
+
             <div style="background:#f0f0f7; padding:15px; border-radius:15px; margin-bottom:15px">
-                <label>Editor List:</label>
+                <label>Daftar Editor:</label>
                 <div id="list-editor-del" class="mgmt-list"></div>
-                <input type="text" id="m-name" placeholder="Nama"><input type="text" id="m-wa" placeholder="628..." style="margin-top:5px">
-                <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addEditor()">+ Editor</button>
+                <hr>
+                <label>Tambah Editor Baru</label>
+                <input type="text" id="m-name" placeholder="Nama">
+                <input type="text" id="m-wa" placeholder="WA (628...)" style="margin-top:5px">
+                <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addEditor()">Tambah Editor</button>
             </div>
+
             <div style="background:#f0f0f7; padding:15px; border-radius:15px">
-                <label>Subject List:</label>
+                <label>Daftar Subject:</label>
                 <div id="list-subject-del" class="mgmt-list"></div>
+                <hr>
+                <label>Tambah Subject Baru</label>
                 <input type="text" id="m-sub" placeholder="Nama Subject">
-                <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addSubject()">+ Subject</button>
+                <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addSubject()">Tambah Subject</button>
             </div>
-            <button class="btn-main" style="width:100%; margin-top:15px; background:#333" onclick="saveManagement()">Update Spreadsheet</button>
-            <button class="btn-main" style="width:100%; background:#888; margin-top:8px" onclick="closeModal('modalManagement')">Tutup</button>
+            
+            <button class="btn-main" style="width:100%; margin-top:15px; background:#333" onclick="saveManagement()">Simpan ke Spreadsheet</button>
+            <button class="btn-main" style="width:100%; background:#888; margin-top:8px" onclick="closeModal('modalManagement')">Batal</button>
         </div>
     </div>
 
@@ -157,12 +164,12 @@
 
     <div id="modalAction" class="modal">
         <div class="modal-content">
-            <h3>Project Detail</h3>
-            <div class="input-group"><label>Title</label><input type="text" id="a-title" readonly></div>
+            <h3 id="a-title-display">Project Detail</h3>
+            <div class="input-group"><label>Project Title</label><input type="text" id="a-title-readonly" readonly></div>
             <div class="input-group"><label>Status</label><select id="a-status" onchange="toggleNoteField()"></select></div>
             <div class="input-group"><label>Link Result</label><input type="text" id="a-result"></div>
             <div class="input-group"><label>Link Revision</label><input type="text" id="a-revision"></div>
-            <div class="input-group"><label>Note</label><textarea id="a-note" style="height:80px"></textarea></div>
+            <div class="input-group"><label>Note / Catatan</label><textarea id="a-note" style="height: 100px;"></textarea></div>
             <div id="admin-pj-zone" class="hidden"><label>Ganti Editor PJ</label><select id="a-editor-select"></select></div>
             <button class="btn-main" style="width:100%; margin-top:10px" onclick="saveAction()">Simpan Update</button>
             <div id="admin-delete-zone" class="hidden"><button class="btn-danger" onclick="deleteProject()">Hapus Project</button></div>
@@ -171,7 +178,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaEIxokQhwsu_fTnhF9yVgqHGBVar6hYBXGHpo2-SsyDN-uG1cR0grQOBSg4JApCxj/exec'; // GANTI INI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaEIxokQhwsu_fTnhF9yVgqHGBVar6hYBXGHpo2-SsyDN-uG1cR0grQOBSg4JApCxj/exec'; // GANTI DENGAN URL APPS SCRIPT ANDA
 
         let currentUser = null, activeRowIndex = null, projects = [], editors = [], subjects = [], waReview = "", waRetake = "";
 
@@ -194,7 +201,7 @@
                 waRetake = data.settings.find(r => r[0] === 'WA_RETAKE')?.[1] || "";
                 syncDropdowns();
                 renderTable();
-            } catch (e) { console.error(e); }
+            } catch (e) { alert("Error connecting to Spreadsheet!"); }
             toggleLoading(false);
         }
 
@@ -210,9 +217,11 @@
                     <td>${p.deadline}</td>
                     <td><span class="pill ${p.status === 'Revision Needed' ? 'blink-red' : ''}" style="background:${getStatusColor(p.status)}; color:white">${p.status}</span></td>
                     <td>
-                        <a href="${p.material}" target="_blank"><i class="fa-solid fa-box"></i></a>
-                        <a href="${p.raw}" target="_blank"><i class="fa-solid fa-film"></i></a>
-                        ${p.result ? `<a href="${p.result}" target="_blank"><i class="fa-solid fa-check-circle" style="color:green"></i></a>` : ''}
+                        <div style="display:flex; gap:10px">
+                            <a href="${p.material}" target="_blank" title="Material"><i class="fa-solid fa-box-open"></i></a>
+                            <a href="${p.raw}" target="_blank" title="RAW"><i class="fa-solid fa-film"></i></a>
+                            ${p.result ? `<a href="${p.result}" target="_blank" title="Result" style="color:var(--ios-green)"><i class="fa-solid fa-play-circle"></i></a>` : ''}
+                        </div>
                     </td>
                     <td><small>${p.note || '-'}</small></td>
                     <td><button onclick="openAction(${p.rowIndex})"><i class="fa-solid fa-pen"></i></button></td>
@@ -222,31 +231,32 @@
         }
 
         async function saveNewProject() {
-            toggleLoading(true);
             const payload = { action:'ADD', title: document.getElementById('n-title').value, subject: document.getElementById('n-subject').value, editor: document.getElementById('n-editor').value, deadline: document.getElementById('n-deadline').value, material: document.getElementById('n-mat').value, raw: document.getElementById('n-raw').value };
+            if(!payload.title) return alert("Isi judul!");
+            toggleLoading(true);
             await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             closeModal('modalNewProject');
             setTimeout(refreshData, 1500);
         }
 
         async function saveAction() {
-            toggleLoading(true);
             const payload = { action:'UPDATE', rowIndex: activeRowIndex, status: document.getElementById('a-status').value, result: document.getElementById('a-result').value, revision: document.getElementById('a-revision').value, note: document.getElementById('a-note').value, newEditor: currentUser === 'admin' ? document.getElementById('a-editor-select').value : null };
+            toggleLoading(true);
             await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             closeModal('modalAction');
             setTimeout(refreshData, 1500);
         }
 
         async function saveManagement() {
+            const payload = { action:'SAVE_MGMT', editors, subjects, waReview: document.getElementById('wa-review-multi').value, waRetake: document.getElementById('wa-retake-multi').value };
             toggleLoading(true);
-            const payload = { action:'SAVE_MGMT', editors, subjects, waReview: document.getElementById('wa-review-input').value, waRetake: document.getElementById('wa-retake-input').value };
             await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             closeModal('modalManagement');
             setTimeout(refreshData, 1500);
         }
 
         async function deleteProject() {
-            if(confirm("Hapus baris ini di Spreadsheet?")) {
+            if(confirm("Hapus project permanen?")) {
                 toggleLoading(true);
                 await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action:'DELETE', rowIndex: activeRowIndex}) });
                 closeModal('modalAction');
@@ -257,7 +267,7 @@
         function openAction(rowIndex) {
             activeRowIndex = rowIndex;
             const p = projects.find(x => x.rowIndex === rowIndex);
-            document.getElementById('a-title').value = p.title;
+            document.getElementById('a-title-readonly').value = p.title;
             document.getElementById('a-result').value = p.result;
             document.getElementById('a-revision').value = p.revision;
             document.getElementById('a-note').value = p.note;
@@ -265,23 +275,17 @@
             const allS = ["To do", "In Progress", "Review", "Revision Needed", "Retake", "Finalized"];
             sSelect.innerHTML = (currentUser === 'admin' ? allS : ["To do", "In Progress", "Review", "Retake"]).map(s => `<option value="${s}">${s}</option>`).join('');
             sSelect.value = p.status;
-            if(currentUser === 'admin') { document.getElementById('admin-delete-zone').classList.remove('hidden'); document.getElementById('admin-pj-zone').classList.remove('hidden'); document.getElementById('a-editor-select').value = p.editor; }
+            if(currentUser === 'admin') { 
+                document.getElementById('admin-delete-zone').classList.remove('hidden'); 
+                document.getElementById('admin-pj-zone').classList.remove('hidden'); 
+                document.getElementById('a-editor-select').value = p.editor;
+            }
             openModal('modalAction');
         }
 
-        function syncDropdowns() {
-            const subOpt = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
-            const edOpt = editors.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
-            document.getElementById('n-subject').innerHTML = subOpt;
-            document.getElementById('n-editor').innerHTML = edOpt;
-            document.getElementById('f-subject').innerHTML = '<option value="">Semua Subject</option>' + subOpt;
-            document.getElementById('f-editor').innerHTML = '<option value="">Semua Editor</option>' + edOpt;
-            document.getElementById('a-editor-select').innerHTML = edOpt;
-        }
-
         function openManagement() {
-            document.getElementById('wa-review-input').value = waReview;
-            document.getElementById('wa-retake-input').value = waRetake;
+            document.getElementById('wa-review-multi').value = waReview;
+            document.getElementById('wa-retake-multi').value = waRetake;
             renderMgmtLists();
             openModal('modalManagement');
         }
@@ -291,8 +295,24 @@
             document.getElementById('list-subject-del').innerHTML = subjects.map((s, i) => `<div class="mgmt-item">${s} <i class="fa-solid fa-trash del-btn" onclick="subjects.splice(${i},1);renderMgmtLists()"></i></div>`).join('');
         }
 
-        function addEditor() { const n = document.getElementById('m-name').value, w = document.getElementById('m-wa').value; if(n){ editors.push({name:n, wa:w}); renderMgmtLists(); } }
-        function addSubject() { const s = document.getElementById('m-sub').value; if(s){ subjects.push(s); renderMgmtLists(); } }
+        function addEditor() { 
+            const n = document.getElementById('m-name').value, w = document.getElementById('m-wa').value; 
+            if(n) { editors.push({name:n, wa:w}); renderMgmtLists(); document.getElementById('m-name').value=''; document.getElementById('m-wa').value=''; } 
+        }
+        function addSubject() { 
+            const s = document.getElementById('m-sub').value; 
+            if(s) { subjects.push(s); renderMgmtLists(); document.getElementById('m-sub').value=''; } 
+        }
+
+        function syncDropdowns() {
+            const subOpt = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+            const edOpt = editors.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+            document.getElementById('n-subject').innerHTML = subOpt;
+            document.getElementById('n-editor').innerHTML = edOpt;
+            document.getElementById('a-editor-select').innerHTML = edOpt;
+            document.getElementById('f-subject').innerHTML = '<option value="">Semua Subject</option>' + subOpt;
+            document.getElementById('f-editor').innerHTML = '<option value="">Semua Editor</option>' + edOpt;
+        }
 
         function getStatusColor(s) { return {'Finalized':'var(--ios-green)', 'In Progress':'var(--ios-yellow)', 'Review':'var(--ios-blue)', 'Revision Needed':'var(--ios-red)', 'Retake':'#5856D6'}[s] || '#8e8e93'; }
 
@@ -312,7 +332,7 @@
         function showDashboard() { document.getElementById('login-page').style.display = 'none'; document.getElementById('dashboard-page').style.display = 'block'; document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`; if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden'); refreshData(); }
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function toggleNoteField() { /* Logic tambahan jika ingin disable note */ }
+        function toggleNoteField() { /* Logic tambahan */ }
     </script>
 </body>
 </html>
