@@ -172,8 +172,8 @@
 
     <div id="modalAction" class="modal">
         <div class="modal-content">
-            <h3 id="a-title-display">Project Detail</h3>
-            <div class="input-group"><label>Project Title</label><input type="text" id="a-title-readonly" readonly></div>
+            <h3 id="a-title-display">Edit Project</h3>
+            <div class="input-group"><label>Project Title</label><input type="text" id="a-title"></div>
             
             <div class="input-group"><label>Deadline</label><input type="date" id="a-deadline"></div>
             
@@ -191,7 +191,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymZKoflYA7keH0TIymNYKB9elkItL-9Up4DBw0hhlrn7Ir0KVFKhB9MWfXN_yKo9m8/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxJFeEp6DLzjB_djtXDbWdhiVoz2Z4jFi2CJxFzKxoS3iDg2t51cd4SjkoPHwOs46ZC/exec';
 
         let currentUser = null, activeRowIndex = null, projects = [], editors = [], subjects = [], waReview = "", waRetake = "";
 
@@ -257,7 +257,8 @@
             const payload = { 
                 action:'UPDATE', 
                 rowIndex: activeRowIndex, 
-                deadline: document.getElementById('a-deadline').value, // Simpan deadline baru
+                title: document.getElementById('a-title').value, // Menambahkan Title untuk dikirim ke GAS
+                deadline: document.getElementById('a-deadline').value, 
                 status: document.getElementById('a-status').value, 
                 result: document.getElementById('a-result').value, 
                 revision: document.getElementById('a-revision').value, 
@@ -273,11 +274,15 @@
         function openAction(rowIndex) {
             activeRowIndex = rowIndex;
             const p = projects.find(x => x.rowIndex === rowIndex);
-            document.getElementById('a-title-readonly').value = p.title;
             
-            // Masukkan deadline lama ke input date
+            // Set input Title agar bisa diedit
+            const titleInput = document.getElementById('a-title');
+            titleInput.value = p.title;
+            
+            // Hanya admin yang bisa edit Title
+            titleInput.readOnly = (currentUser !== 'admin');
+            
             document.getElementById('a-deadline').value = p.deadline; 
-            
             document.getElementById('a-result').value = p.result || '';
             document.getElementById('a-revision').value = p.revision || '';
             document.getElementById('a-note').value = p.note || '';
@@ -298,7 +303,6 @@
             openModal('modalAction');
         }
 
-        // --- Fungsi lainnya tetap sama ---
         async function saveManagement() {
             const payload = { action:'SAVE_MGMT', editors, subjects, waReview: document.getElementById('wa-review-multi').value, waRetake: document.getElementById('wa-retake-multi').value };
             toggleLoading(true);
