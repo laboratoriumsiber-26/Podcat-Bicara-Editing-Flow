@@ -13,7 +13,6 @@
         }
         body { margin: 0; font-family: -apple-system, sans-serif; background: var(--ios-bg); color: #000; }
         
-        /* Loading Overlay */
         #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; }
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--ios-blue); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -51,7 +50,7 @@
         .mgmt-list { margin: 10px 0; padding: 0; list-style: none; background: #fff; border-radius: 10px; }
         .mgmt-item { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 12px; align-items: center; }
         .del-btn { color: var(--ios-red); cursor: pointer; border: none; background: none; }
-        .hidden { display: none; }
+        .hidden { display: none !important; } /* Force Hidden */
     </style>
 </head>
 <body>
@@ -95,6 +94,7 @@
         <div class="action-bar" style="margin-bottom: 20px; display: flex; gap: 10px;">
             <select id="f-subject" onchange="renderTable()" style="width: auto;"><option value="">Semua Subject</option></select>
             <select id="f-editor" onchange="renderTable()" style="width: auto;"><option value="">Semua Editor</option></select>
+            
             <div id="admin-controls" style="margin-left: auto; display: flex; gap: 10px;">
                 <button class="btn-main" onclick="openModal('modalNewProject')">New Project</button>
                 <button class="btn-main" style="background:#333" onclick="openManagement()">Management</button>
@@ -131,7 +131,6 @@
                 <label style="margin-top:10px">WA Admin (RETAKE)</label>
                 <input type="text" id="wa-retake-multi" placeholder="62812...">
             </div>
-
             <div style="background:#f0f0f7; padding:15px; border-radius:15px; margin-bottom:15px">
                 <label>Daftar Editor:</label>
                 <div id="list-editor-del" class="mgmt-list"></div>
@@ -141,7 +140,6 @@
                 <input type="text" id="m-wa" placeholder="WA (628...)" style="margin-top:5px">
                 <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addEditor()">Tambah Editor</button>
             </div>
-
             <div style="background:#f0f0f7; padding:15px; border-radius:15px">
                 <label>Daftar Subject:</label>
                 <div id="list-subject-del" class="mgmt-list"></div>
@@ -150,7 +148,6 @@
                 <input type="text" id="m-sub" placeholder="Nama Subject">
                 <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addSubject()">Tambah Subject</button>
             </div>
-            
             <button class="btn-main" style="width:100%; margin-top:15px; background:#333" onclick="saveManagement()">Simpan ke Spreadsheet</button>
             <button class="btn-main" style="width:100%; background:#888; margin-top:8px" onclick="closeModal('modalManagement')">Batal</button>
         </div>
@@ -174,16 +171,12 @@
         <div class="modal-content">
             <h3 id="a-title-display">Edit Project</h3>
             <div class="input-group"><label>Project Title</label><input type="text" id="a-title"></div>
-            
             <div class="input-group"><label>Deadline</label><input type="date" id="a-deadline"></div>
-            
             <div class="input-group"><label>Status</label><select id="a-status"></select></div>
             <div class="input-group"><label>Link Result</label><input type="text" id="a-result"></div>
             <div class="input-group"><label>Link Revision</label><input type="text" id="a-revision"></div>
             <div class="input-group"><label>Note / Catatan</label><textarea id="a-note" style="height: 100px;"></textarea></div>
-            
             <div id="admin-pj-zone" class="hidden"><label>Ganti Editor</label><select id="a-editor-select"></select></div>
-            
             <button class="btn-main" style="width:100%; margin-top:10px" onclick="saveAction()">Simpan Update</button>
             <div id="admin-delete-zone" class="hidden"><button class="btn-danger" onclick="deleteProject()">Hapus Project</button></div>
             <button class="btn-main" style="width:100%; background:#888; margin-top:10px" onclick="closeModal('modalAction')">Tutup</button>
@@ -192,7 +185,6 @@
 
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymZKoflYA7keH0TIymNYKB9elkItL-9Up4DBw0hhlrn7Ir0KVFKhB9MWfXN_yKo9m8/exec';
-
         let currentUser = null, activeRowIndex = null, projects = [], editors = [], subjects = [], waReview = "", waRetake = "";
 
         window.onload = function() {
@@ -208,10 +200,8 @@
                 const resp = await fetch(SCRIPT_URL);
                 const data = await resp.json();
                 projects = data.projects.slice(1).map((r, i) => ({ 
-                    rowIndex: i + 2, 
-                    title: r[0], subject: r[1], editor: r[2], deadline: r[3], 
-                    status: r[4], material: r[5], raw: r[6], result: r[7], 
-                    revision: r[8], note: r[9] 
+                    rowIndex: i + 2, title: r[0], subject: r[1], editor: r[2], deadline: r[3], 
+                    status: r[4], material: r[5], raw: r[6], result: r[7], revision: r[8], note: r[9] 
                 }));
                 editors = data.settings.filter(r => r[0] === 'EDITOR').map(r => ({name: r[1], wa: r[2]}));
                 subjects = data.settings.filter(r => r[0] === 'SUBJECT').map(r => r[1]);
@@ -254,17 +244,7 @@
         }
 
         async function saveAction() {
-            const payload = { 
-                action:'UPDATE', 
-                rowIndex: activeRowIndex, 
-                title: document.getElementById('a-title').value, 
-                deadline: document.getElementById('a-deadline').value, 
-                status: document.getElementById('a-status').value, 
-                result: document.getElementById('a-result').value, 
-                revision: document.getElementById('a-revision').value, 
-                note: document.getElementById('a-note').value, 
-                newEditor: currentUser === 'admin' ? document.getElementById('a-editor-select').value : null 
-            };
+            const payload = { action:'UPDATE', rowIndex: activeRowIndex, title: document.getElementById('a-title').value, deadline: document.getElementById('a-deadline').value, status: document.getElementById('a-status').value, result: document.getElementById('a-result').value, revision: document.getElementById('a-revision').value, note: document.getElementById('a-note').value, newEditor: currentUser === 'admin' ? document.getElementById('a-editor-select').value : null };
             toggleLoading(true);
             await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             closeModal('modalAction');
@@ -357,10 +337,8 @@
         function handleLogin() {
             const u = document.getElementById('username').value.toLowerCase();
             const p = document.getElementById('password').value;
-
-            // KUSTOMISASI PASSWORD DI SINI
-            const ADMIN_PASS = "RAHASIA_ADMIN"; // Silakan ganti ini
-            const USER_PASS = "RAHASIA_USER";   // Silakan ganti ini
+            const ADMIN_PASS = "admin123"; 
+            const USER_PASS = "user123";   
 
             if (u === 'admin' && p === ADMIN_PASS) {
                 currentUser = 'admin';
@@ -370,13 +348,26 @@
                 currentUser = 'user';
                 localStorage.setItem('podcastSession', 'user');
                 showDashboard();
-            } else {
-                alert("Username atau Password salah!");
-            }
+            } else { alert("Login Salah!"); }
         }
 
         function handleLogout() { localStorage.removeItem('podcastSession'); location.reload(); }
-        function showDashboard() { document.getElementById('login-page').style.display = 'none'; document.getElementById('dashboard-page').style.display = 'block'; document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`; if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden'); refreshData(); }
+
+        function showDashboard() { 
+            document.getElementById('login-page').style.display = 'none'; 
+            document.getElementById('dashboard-page').style.display = 'block'; 
+            document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`; 
+            
+            // LOGIKA FILTERING TOMBOL ADMIN
+            const adminControls = document.getElementById('admin-controls');
+            if (currentUser === 'user') {
+                adminControls.classList.add('hidden'); // Sembunyikan New Project & Management
+            } else {
+                adminControls.classList.remove('hidden'); // Munculkan untuk Admin
+            }
+            refreshData(); 
+        }
+
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     </script>
