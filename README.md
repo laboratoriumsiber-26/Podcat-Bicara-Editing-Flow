@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Podcast Bicara - Workflow</title>
+    <title>Podcast Bicara - Realtime Workflow</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -12,44 +12,56 @@
             --ios-yellow: #FFCC00; --ios-bg: #F2F2F7;
         }
         body { margin: 0; font-family: -apple-system, sans-serif; background: var(--ios-bg); color: #000; }
+        
+        /* Loading Overlay */
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--ios-blue); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         #login-page { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1590602847861-f357a9332bbc?q=80&w=1920') center/cover; }
         .login-card { background: white; padding: 30px; border-radius: 25px; width: 300px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         #dashboard-page { display: none; padding: 20px; max-width: 1550px; margin: auto; }
+        
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .analytics-section { display: flex; gap: 20px; margin-bottom: 20px; }
         .chart-box { background: white; padding: 15px; border-radius: 20px; width: 180px; height: 180px; }
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; flex-grow: 1; }
         .stat-card { background: white; padding: 15px; border-radius: 18px; border-left: 4px solid var(--ios-blue); }
         .stat-card b { font-size: 24px; display: block; }
+        
         .table-container { background: white; border-radius: 20px; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; min-width: 1400px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1500px; }
         th { background: #f9f9f9; padding: 15px; text-align: left; font-size: 11px; color: #888; border-bottom: 1px solid #eee; }
         td { padding: 15px; border-bottom: 1px solid #f2f2f7; font-size: 13px; }
+        
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); }
         .modal-content { background: white; margin: 5vh auto; padding: 25px; width: 90%; max-width: 450px; border-radius: 25px; max-height: 85vh; overflow-y: auto; }
+        
         .input-group { margin-bottom: 12px; }
         label { font-size: 11px; font-weight: bold; color: #888; display: block; margin-bottom: 5px; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        input:disabled, textarea:disabled, select:disabled { background-color: #f5f5f7; color: #888; cursor: not-allowed; }
+        
         .btn-main { background: var(--ios-blue); color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
         .btn-danger { background: var(--ios-red); color: white; border: none; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; width: 100%; }
         .pill { padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; }
         
-        /* EFEK VISUAL SESUAI PERMINTAAN */
         .blink-red { animation: blinker 1s linear infinite !important; background-color: var(--ios-red) !important; color: white !important; }
         @keyframes blinker { 50% { opacity: 0.2; } }
 
-        /* Style tambahan untuk list hapus */
         .mgmt-list { margin: 10px 0; padding: 0; list-style: none; background: #fff; border-radius: 10px; }
         .mgmt-item { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 12px; align-items: center; }
-        .mgmt-item:last-child { border-bottom: none; }
         .del-btn { color: var(--ios-red); cursor: pointer; border: none; background: none; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
- <div id="login-page">
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p style="margin-top:15px; font-size:13px; color:#666">Syncing Spreadsheet...</p>
+    </div>
+
+    <div id="login-page">
         <div class="login-card">
             <h2 style="margin-top:0">Podcast Bicara</h2>
             <input type="text" id="username" placeholder="Username">
@@ -61,10 +73,13 @@
     <div id="dashboard-page">
         <div class="header-bar">
             <div>
-                <h2 style="margin:0">Workflow Editing</h2>
+                <h2 style="margin:0">Workflow Production</h2>
                 <small id="user-info" style="color:#666"></small>
             </div>
-            <button class="btn-main" style="background:#8e8e93" onclick="handleLogout()">Logout</button>
+            <div style="display:flex; gap:10px">
+                <button class="btn-main" style="background:#8e8e93" onclick="refreshData()"><i class="fa-solid fa-sync"></i> Refresh</button>
+                <button class="btn-main" style="background:#333" onclick="handleLogout()">Logout</button>
+            </div>
         </div>
 
         <div class="analytics-section">
@@ -80,15 +95,6 @@
         <div class="action-bar" style="margin-bottom: 20px; display: flex; gap: 10px;">
             <select id="f-subject" onchange="renderTable()" style="width: auto;"><option value="">Semua Subject</option></select>
             <select id="f-editor" onchange="renderTable()" style="width: auto;"><option value="">Semua Editor</option></select>
-            <select id="f-status" onchange="renderTable()" style="width: auto;">
-                <option value="">Semua Status</option>
-                <option value="To do">To do</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Review">Review</option>
-                <option value="Revision Needed">Revision Needed</option>
-                <option value="Retake">Retake</option>
-                <option value="Finalized">Finalized</option>
-            </select>
             <div id="admin-controls" style="margin-left: auto; display: flex; gap: 10px;">
                 <button class="btn-main" onclick="openModal('modalNewProject')">New Project</button>
                 <button class="btn-main" style="background:#333" onclick="openManagement()">Management</button>
@@ -99,8 +105,16 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Project Title</th><th>Subject</th><th>Editor</th><th>Deadline</th><th>Status</th>
-                        <th>Material</th><th>RAW</th><th>Result</th><th>Revision</th><th>Note</th><th>Action</th>
+                        <th>Project Title</th>
+                        <th>Subject</th>
+                        <th>Editor</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                        <th>RAW Link</th>
+                        <th>Result</th>
+                        <th>Revision</th>
+                        <th>Note</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="main-table-body"></tbody>
@@ -112,24 +126,24 @@
         <div class="modal-content">
             <h3>Management & WA Settings</h3>
             <div style="background:#f0f0f7; padding:15px; border-radius:15px; margin-bottom:15px">
-                <label>Nomor WA Admin (Status: REVIEW)</label>
+                <label>WA Admin (REVIEW)</label>
                 <input type="text" id="wa-review-multi" placeholder="62812...">
-                <label style="margin-top:10px">Nomor WA Admin (Status: RETAKE)</label>
+                <label style="margin-top:10px">WA Admin (RETAKE)</label>
                 <input type="text" id="wa-retake-multi" placeholder="62812...">
             </div>
 
             <div style="background:#f0f0f7; padding:15px; border-radius:15px; margin-bottom:15px">
-                <label>Daftar Editor Saat Ini:</label>
+                <label>Daftar Editor:</label>
                 <div id="list-editor-del" class="mgmt-list"></div>
                 <hr>
                 <label>Tambah Editor Baru</label>
-                <input type="text" id="m-name" placeholder="Nama Editor">
-                <input type="text" id="m-wa" placeholder="WA Editor (628...)">
+                <input type="text" id="m-name" placeholder="Nama">
+                <input type="text" id="m-wa" placeholder="WA (628...)" style="margin-top:5px">
                 <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addEditor()">Tambah Editor</button>
             </div>
 
             <div style="background:#f0f0f7; padding:15px; border-radius:15px">
-                <label>Daftar Subject Saat Ini:</label>
+                <label>Daftar Subject:</label>
                 <div id="list-subject-del" class="mgmt-list"></div>
                 <hr>
                 <label>Tambah Subject Baru</label>
@@ -137,7 +151,7 @@
                 <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addSubject()">Tambah Subject</button>
             </div>
             
-            <button class="btn-main" style="width:100%; margin-top:15px; background:#333" onclick="saveManagement()">Simpan Pengaturan</button>
+            <button class="btn-main" style="width:100%; margin-top:15px; background:#333" onclick="saveManagement()">Simpan ke Spreadsheet</button>
             <button class="btn-main" style="width:100%; background:#888; margin-top:8px" onclick="closeModal('modalManagement')">Batal</button>
         </div>
     </div>
@@ -158,20 +172,18 @@
 
     <div id="modalAction" class="modal">
         <div class="modal-content">
-            <h3 id="a-title-display">Project Detail</h3>
-            <div style="background: #f9f9f9; padding: 10px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee;">
-                <div class="input-group"><label>Project Title</label><input type="text" id="a-title-readonly" readonly></div>
-                <div class="input-group"><label>Subject</label><input type="text" id="a-subject-readonly" readonly></div>
-                <div class="input-group"><label>Editor PJ</label><input type="text" id="a-editor-readonly" readonly></div>
-            </div>
-            <div class="input-group"><label>Status</label><select id="a-status" onchange="toggleNoteField()"></select></div>
-            <div class="input-group"><label>Link Video Result</label><input type="text" id="a-result"></div>
-            <div class="input-group"><label>Link Video Revision</label><input type="text" id="a-revision"></div>
-            <div class="input-group">
-                <label>Note / Catatan <span id="note-alert" style="color:red; font-size:9px; display:none;">(Hanya aktif saat status RETAKE)</span></label>
-                <textarea id="a-note" style="height: 100px;"></textarea>
-            </div>
-            <div id="admin-pj-zone" class="hidden"><label>Ganti Editor PJ</label><select id="a-editor-select"></select></div>
+            <h3 id="a-title-display">Edit Project</h3>
+            <div class="input-group"><label>Project Title</label><input type="text" id="a-title"></div>
+            
+            <div class="input-group"><label>Deadline</label><input type="date" id="a-deadline"></div>
+            
+            <div class="input-group"><label>Status</label><select id="a-status"></select></div>
+            <div class="input-group"><label>Link Result</label><input type="text" id="a-result"></div>
+            <div class="input-group"><label>Link Revision</label><input type="text" id="a-revision"></div>
+            <div class="input-group"><label>Note / Catatan</label><textarea id="a-note" style="height: 100px;"></textarea></div>
+            
+            <div id="admin-pj-zone" class="hidden"><label>Ganti Editor</label><select id="a-editor-select"></select></div>
+            
             <button class="btn-main" style="width:100%; margin-top:10px" onclick="saveAction()">Simpan Update</button>
             <div id="admin-delete-zone" class="hidden"><button class="btn-danger" onclick="deleteProject()">Hapus Project</button></div>
             <button class="btn-main" style="width:100%; background:#888; margin-top:10px" onclick="closeModal('modalAction')">Tutup</button>
@@ -179,27 +191,176 @@
     </div>
 
     <script>
-        let currentUser = null;
-        let activeId = null;
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymZKoflYA7keH0TIymNYKB9elkItL-9Up4DBw0hhlrn7Ir0KVFKhB9MWfXN_yKo9m8/exec';
 
-        // Data Management (Ambil dari LocalStorage jika ada)
-        let waReviewNumbers = localStorage.getItem('waReview') || "62812345678";
-        let waRetakeNumbers = localStorage.getItem('waRetake') || "62812345678";
-        let subjects = JSON.parse(localStorage.getItem('subjects')) || ["Heru Mudiyanto M,Pd", "Drs. Budi"];
-        let editors = JSON.parse(localStorage.getItem('editors')) || [{name: "Mohamad Ardan Fahrobi", wa: "628571234567"}];
-        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+        let currentUser = null, activeRowIndex = null, projects = [], editors = [], subjects = [], waReview = "", waRetake = "";
 
         window.onload = function() {
             const session = localStorage.getItem('podcastSession');
             if (session) { currentUser = session; showDashboard(); }
         };
-function handleLogin() {
+
+        function toggleLoading(show) { document.getElementById('loading-screen').style.display = show ? 'flex' : 'none'; }
+
+        async function refreshData() {
+            toggleLoading(true);
+            try {
+                const resp = await fetch(SCRIPT_URL);
+                const data = await resp.json();
+                projects = data.projects.slice(1).map((r, i) => ({ 
+                    rowIndex: i + 2, 
+                    title: r[0], subject: r[1], editor: r[2], deadline: r[3], 
+                    status: r[4], material: r[5], raw: r[6], result: r[7], 
+                    revision: r[8], note: r[9] 
+                }));
+                editors = data.settings.filter(r => r[0] === 'EDITOR').map(r => ({name: r[1], wa: r[2]}));
+                subjects = data.settings.filter(r => r[0] === 'SUBJECT').map(r => r[1]);
+                waReview = data.settings.find(r => r[0] === 'WA_REVIEW')?.[1] || "";
+                waRetake = data.settings.find(r => r[0] === 'WA_RETAKE')?.[1] || "";
+                syncDropdowns();
+                renderTable();
+            } catch (e) { alert("Error connecting to Spreadsheet!"); }
+            toggleLoading(false);
+        }
+
+        function renderTable() {
+            const fSub = document.getElementById('f-subject').value;
+            const fEd = document.getElementById('f-editor').value;
+            const tbody = document.getElementById('main-table-body');
+            tbody.innerHTML = projects.filter(p => (!fSub || p.subject === fSub) && (!fEd || p.editor === fEd)).map(p => `
+                <tr>
+                    <td><b>${p.title}</b></td>
+                    <td>${p.subject}</td>
+                    <td>${p.editor}</td>
+                    <td>${p.deadline}</td>
+                    <td><span class="pill ${p.status === 'Revision Needed' ? 'blink-red' : ''}" style="background:${getStatusColor(p.status)}; color:white">${p.status}</span></td>
+                    <td><a href="${p.raw}" target="_blank"><i class="fa-solid fa-link"></i></a></td>
+                    <td>${p.result && p.result !== '-' ? `<a href="${p.result}" target="_blank" style="color:var(--ios-green)"><i class="fa-solid fa-play-circle"></i></a>` : '-'}</td>
+                    <td>${p.revision && p.revision !== '-' ? `<a href="${p.revision}" target="_blank" style="color:var(--ios-red)"><i class="fa-solid fa-rotate-left"></i></a>` : '-'}</td>
+                    <td><small>${p.note || '-'}</small></td>
+                    <td><button onclick="openAction(${p.rowIndex})"><i class="fa-solid fa-pen-to-square"></i></button></td>
+                </tr>
+            `).join('');
+            updateStats();
+        }
+
+        async function saveNewProject() {
+            const payload = { action:'ADD', title: document.getElementById('n-title').value, subject: document.getElementById('n-subject').value, editor: document.getElementById('n-editor').value, deadline: document.getElementById('n-deadline').value, material: document.getElementById('n-mat').value, raw: document.getElementById('n-raw').value };
+            if(!payload.title) return alert("Isi judul!");
+            toggleLoading(true);
+            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            closeModal('modalNewProject');
+            setTimeout(refreshData, 1500);
+        }
+
+        async function saveAction() {
+            const payload = { 
+                action:'UPDATE', 
+                rowIndex: activeRowIndex, 
+                title: document.getElementById('a-title').value, 
+                deadline: document.getElementById('a-deadline').value, 
+                status: document.getElementById('a-status').value, 
+                result: document.getElementById('a-result').value, 
+                revision: document.getElementById('a-revision').value, 
+                note: document.getElementById('a-note').value, 
+                newEditor: currentUser === 'admin' ? document.getElementById('a-editor-select').value : null 
+            };
+            toggleLoading(true);
+            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            closeModal('modalAction');
+            setTimeout(refreshData, 1500);
+        }
+
+        function openAction(rowIndex) {
+            activeRowIndex = rowIndex;
+            const p = projects.find(x => x.rowIndex === rowIndex);
+            const titleInput = document.getElementById('a-title');
+            titleInput.value = p.title;
+            titleInput.readOnly = (currentUser !== 'admin');
+            document.getElementById('a-deadline').value = p.deadline; 
+            document.getElementById('a-result').value = p.result || '';
+            document.getElementById('a-revision').value = p.revision || '';
+            document.getElementById('a-note').value = p.note || '';
+            const sSelect = document.getElementById('a-status');
+            const allS = ["To do", "In Progress", "Review", "Revision Needed", "Retake", "Finalized"];
+            sSelect.innerHTML = (currentUser === 'admin' ? allS : ["To do", "In Progress", "Review", "Retake"]).map(s => `<option value="${s}">${s}</option>`).join('');
+            sSelect.value = p.status;
+            if(currentUser === 'admin') { 
+                document.getElementById('admin-delete-zone').classList.remove('hidden'); 
+                document.getElementById('admin-pj-zone').classList.remove('hidden'); 
+                document.getElementById('a-editor-select').value = p.editor;
+            } else {
+                document.getElementById('admin-delete-zone').classList.add('hidden'); 
+                document.getElementById('admin-pj-zone').classList.add('hidden'); 
+            }
+            openModal('modalAction');
+        }
+
+        async function saveManagement() {
+            const payload = { action:'SAVE_MGMT', editors, subjects, waReview: document.getElementById('wa-review-multi').value, waRetake: document.getElementById('wa-retake-multi').value };
+            toggleLoading(true);
+            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            closeModal('modalManagement');
+            setTimeout(refreshData, 1500);
+        }
+
+        async function deleteProject() {
+            if(confirm("Hapus project permanen?")) {
+                toggleLoading(true);
+                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action:'DELETE', rowIndex: activeRowIndex}) });
+                closeModal('modalAction');
+                setTimeout(refreshData, 1500);
+            }
+        }
+
+        function openManagement() {
+            document.getElementById('wa-review-multi').value = waReview;
+            document.getElementById('wa-retake-multi').value = waRetake;
+            renderMgmtLists();
+            openModal('modalManagement');
+        }
+
+        function renderMgmtLists() {
+            document.getElementById('list-editor-del').innerHTML = editors.map((e, i) => `<div class="mgmt-item">${e.name} <i class="fa-solid fa-trash del-btn" onclick="editors.splice(${i},1);renderMgmtLists()"></i></div>`).join('');
+            document.getElementById('list-subject-del').innerHTML = subjects.map((s, i) => `<div class="mgmt-item">${s} <i class="fa-solid fa-trash del-btn" onclick="subjects.splice(${i},1);renderMgmtLists()"></i></div>`).join('');
+        }
+
+        function addEditor() { 
+            const n = document.getElementById('m-name').value, w = document.getElementById('m-wa').value; 
+            if(n) { editors.push({name:n, wa:w}); renderMgmtLists(); document.getElementById('m-name').value=''; document.getElementById('m-wa').value=''; } 
+        }
+        function addSubject() { 
+            const s = document.getElementById('m-sub').value; 
+            if(s) { subjects.push(s); renderMgmtLists(); document.getElementById('m-sub').value=''; } 
+        }
+
+        function syncDropdowns() {
+            const subOpt = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+            const edOpt = editors.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+            document.getElementById('n-subject').innerHTML = subOpt;
+            document.getElementById('n-editor').innerHTML = edOpt;
+            document.getElementById('a-editor-select').innerHTML = edOpt;
+            document.getElementById('f-subject').innerHTML = '<option value="">Semua Subject</option>' + subOpt;
+            document.getElementById('f-editor').innerHTML = '<option value="">Semua Editor</option>' + edOpt;
+        }
+
+        function getStatusColor(s) { return {'Finalized':'var(--ios-green)', 'In Progress':'var(--ios-yellow)', 'Review':'var(--ios-blue)', 'Revision Needed':'var(--ios-red)', 'Retake':'#5856D6'}[s] || '#8e8e93'; }
+
+        function updateStats() {
+            const s = { total: projects.length, todo: projects.filter(x => x.status === 'To do').length, progress: projects.filter(x => x.status === 'In Progress').length, final: projects.filter(x => x.status === 'Finalized').length };
+            document.getElementById('stat-total').innerText = s.total; document.getElementById('stat-todo').innerText = s.todo; document.getElementById('stat-progress').innerText = s.progress; document.getElementById('stat-final').innerText = s.final;
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            if(window.myChart) window.myChart.destroy();
+            window.myChart = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [s.todo, s.progress, s.final], backgroundColor: ['#007AFF', '#FFCC00', '#34C759'], borderWidth: 0 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+        }
+
+        function handleLogin() {
             const u = document.getElementById('username').value.toLowerCase();
             const p = document.getElementById('password').value;
 
             // KUSTOMISASI PASSWORD DI SINI
-            const ADMIN_PASS = "admin123"; // Silakan ganti ini
-            const USER_PASS = "user123";   // Silakan ganti ini
+            const ADMIN_PASS = "RAHASIA_ADMIN"; // Silakan ganti ini
+            const USER_PASS = "RAHASIA_USER";   // Silakan ganti ini
 
             if (u === 'admin' && p === ADMIN_PASS) {
                 currentUser = 'admin';
@@ -216,195 +377,6 @@ function handleLogin() {
 
         function handleLogout() { localStorage.removeItem('podcastSession'); location.reload(); }
         function showDashboard() { document.getElementById('login-page').style.display = 'none'; document.getElementById('dashboard-page').style.display = 'block'; document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`; if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden'); refreshData(); }
-        function openModal(id) { document.getElementById(id).style.display = 'block'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    </script>
-</body>
-</html>
-
-        function handleLogout() { localStorage.removeItem('podcastSession'); location.reload(); }
-
-        function showDashboard() {
-            document.getElementById('login-page').style.display = 'none';
-            document.getElementById('dashboard-page').style.display = 'block';
-            document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`;
-            if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden');
-            syncDropdowns();
-            renderTable();
-        }
-
-        function syncDropdowns() {
-            const htmlSub = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
-            const htmlEd = editors.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
-            document.getElementById('n-subject').innerHTML = htmlSub;
-            document.getElementById('n-editor').innerHTML = htmlEd;
-            document.getElementById('a-editor-select').innerHTML = htmlEd;
-            document.getElementById('f-subject').innerHTML = '<option value="">Semua Subject</option>' + htmlSub;
-            document.getElementById('f-editor').innerHTML = '<option value="">Semua Editor</option>' + htmlEd;
-        }
-
-        function renderTable() {
-            const fSub = document.getElementById('f-subject').value;
-            const fEd = document.getElementById('f-editor').value;
-            const fStat = document.getElementById('f-status').value;
-            const tbody = document.getElementById('main-table-body');
-            
-            tbody.innerHTML = projects
-                .filter(p => (!fSub || p.subject === fSub) && (!fEd || p.editor === fEd) && (!fStat || p.status === fStat))
-                .map(p => {
-                    let statusColor = getStatusColor(p.status);
-                    let statusClass = "pill" + (p.status === 'Revision Needed' ? " blink-red" : "");
-                    return `<tr>
-                        <td><b>${p.title}</b></td>
-                        <td>${p.subject}</td>
-                        <td>${p.editor}</td>
-                        <td>${p.deadline}</td>
-                        <td><span class="${statusClass}" style="background:${statusColor}; color:white">${p.status}</span></td>
-                        <td><a href="${p.material}"><i class="fa-solid fa-download"></i></a></td>
-                        <td><a href="${p.raw}" target="_blank"><i class="fa-solid fa-link"></i></a></td>
-                        <td>${p.result ? `<a href="${p.result}" target="_blank"><i class="fa-solid fa-play"></i></a>` : '-'}</td>
-                        <td>${p.revision ? `<a href="${p.revision}" target="_blank"><i class="fa-solid fa-rotate"></i></a>` : '-'}</td>
-                        <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><small>${p.note || '-'}</small></td>
-                        <td><button onclick="openAction(${p.id})"><i class="fa-solid fa-pen-to-square"></i></button></td>
-                    </tr>`;
-                }).join('');
-            updateChart();
-            localStorage.setItem('projects', JSON.stringify(projects));
-        }
-
-        function getStatusColor(s) {
-            switch(s) {
-                case 'Finalized': return 'var(--ios-green)';
-                case 'In Progress': return 'var(--ios-yellow)';
-                case 'Review': return 'var(--ios-blue)';
-                case 'Retake': return '#FFCC00'; /* Kuning */
-                case 'Revision Needed': return 'var(--ios-red)';
-                default: return '#8e8e93';
-            }
-        }
-
-        // FUNGSI MANAGEMENT BARU (UNTUK HAPUS)
-        function openManagement() {
-            document.getElementById('wa-review-multi').value = waReviewNumbers;
-            document.getElementById('wa-retake-multi').value = waRetakeNumbers;
-            renderMgmtLists();
-            openModal('modalManagement');
-        }
-
-        function renderMgmtLists() {
-            const edDiv = document.getElementById('list-editor-del');
-            edDiv.innerHTML = editors.map((e, i) => `
-                <div class="mgmt-item">
-                    <span>${e.name}</span>
-                    <i class="fa-solid fa-trash del-btn" onclick="deleteEditor(${i})"></i>
-                </div>
-            `).join('');
-
-            const subDiv = document.getElementById('list-subject-del');
-            subDiv.innerHTML = subjects.map((s, i) => `
-                <div class="mgmt-item">
-                    <span>${s}</span>
-                    <i class="fa-solid fa-trash del-btn" onclick="deleteSubject(${i})"></i>
-                </div>
-            `).join('');
-        }
-
-        function deleteEditor(i) { if(confirm("Hapus editor?")) { editors.splice(i, 1); renderMgmtLists(); } }
-        function deleteSubject(i) { if(confirm("Hapus subject?")) { subjects.splice(i, 1); renderMgmtLists(); } }
-
-        function addEditor() {
-            const n = document.getElementById('m-name').value;
-            const w = document.getElementById('m-wa').value;
-            if(n && w) { editors.push({name:n, wa:w}); document.getElementById('m-name').value=''; document.getElementById('m-wa').value=''; renderMgmtLists(); }
-        }
-
-        function addSubject() {
-            const s = document.getElementById('m-sub').value;
-            if(s) { subjects.push(s); document.getElementById('m-sub').value=''; renderMgmtLists(); }
-        }
-
-        function saveManagement() {
-            waReviewNumbers = document.getElementById('wa-review-multi').value;
-            waRetakeNumbers = document.getElementById('wa-retake-multi').value;
-            localStorage.setItem('waReview', waReviewNumbers);
-            localStorage.setItem('waRetake', waRetakeNumbers);
-            localStorage.setItem('editors', JSON.stringify(editors));
-            localStorage.setItem('subjects', JSON.stringify(subjects));
-            syncDropdowns();
-            alert("Pengaturan Berhasil Disimpan");
-            closeModal('modalManagement');
-        }
-
-        // LOGIKA MODAL LAINNYA (Tetap Sama)
-        function toggleNoteField() {
-            if(currentUser === 'admin') return;
-            const stat = document.getElementById('a-status').value;
-            const note = document.getElementById('a-note');
-            if(stat === 'Retake') { note.disabled = false; document.getElementById('note-alert').style.display='none'; }
-            else { note.disabled = true; document.getElementById('note-alert').style.display='inline'; }
-        }
-
-        function openAction(id) {
-            activeId = id;
-            const p = projects.find(x => x.id === id);
-            document.getElementById('a-title-readonly').value = p.title;
-            document.getElementById('a-subject-readonly').value = p.subject;
-            document.getElementById('a-editor-readonly').value = p.editor;
-            document.getElementById('a-result').value = p.result;
-            document.getElementById('a-revision').value = p.revision;
-            document.getElementById('a-note').value = p.note || "";
-            const sSelect = document.getElementById('a-status');
-            const allS = ["To do", "In Progress", "Review", "Revision Needed", "Retake", "Finalized"];
-            const userS = ["To do", "In Progress", "Review", "Retake"];
-            sSelect.innerHTML = (currentUser === 'admin' ? allS : userS).map(s => `<option value="${s}">${s}</option>`).join('');
-            sSelect.value = p.status;
-            if(currentUser === 'admin') {
-                document.getElementById('admin-delete-zone').classList.remove('hidden');
-                document.getElementById('admin-pj-zone').classList.remove('hidden');
-                document.getElementById('a-note').disabled = false;
-            } else {
-                document.getElementById('admin-delete-zone').classList.add('hidden');
-                document.getElementById('admin-pj-zone').classList.add('hidden');
-                toggleNoteField();
-            }
-            openModal('modalAction');
-        }
-
-        function saveAction() {
-            const p = projects.find(x => x.id === activeId);
-            p.status = document.getElementById('a-status').value;
-            p.result = document.getElementById('a-result').value;
-            p.revision = document.getElementById('a-revision').value;
-            if(!document.getElementById('a-note').disabled) p.note = document.getElementById('a-note').value;
-            if(currentUser === 'admin') p.editor = document.getElementById('a-editor-select').value;
-            closeModal('modalAction');
-            renderTable();
-        }
-
-        function saveNewProject() {
-            projects.push({
-                id: Date.now(), title: document.getElementById('n-title').value,
-                subject: document.getElementById('n-subject').value, editor: document.getElementById('n-editor').value,
-                deadline: document.getElementById('n-deadline').value, material: document.getElementById('n-mat').value,
-                raw: document.getElementById('n-raw').value, status: 'To do', result: '', revision: '', note: ''
-            });
-            closeModal('modalNewProject');
-            renderTable();
-        }
-
-        function deleteProject() { if(confirm("Hapus project?")) { projects = projects.filter(x => x.id !== activeId); closeModal('modalAction'); renderTable(); } }
-
-        function updateChart() {
-            const s = { todo: projects.filter(x => x.status === 'To do').length, progress: projects.filter(x => x.status === 'In Progress').length, final: projects.filter(x => x.status === 'Finalized').length };
-            document.getElementById('stat-total').innerText = projects.length;
-            document.getElementById('stat-todo').innerText = s.todo;
-            document.getElementById('stat-progress').innerText = s.progress;
-            document.getElementById('stat-final').innerText = s.final;
-            const ctx = document.getElementById('statusChart').getContext('2d');
-            if(window.myChart) window.myChart.destroy();
-            window.myChart = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [s.todo, s.progress, s.final], backgroundColor: ['#007AFF', '#FFCC00', '#34C759'], borderWidth: 0 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-        }
-
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     </script>
