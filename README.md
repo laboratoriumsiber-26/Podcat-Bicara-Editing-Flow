@@ -198,8 +198,8 @@ function handleLogin() {
             const p = document.getElementById('password').value;
 
             // KUSTOMISASI PASSWORD DI SINI
-            const ADMIN_PASS = "RAHASIA_ADMIN"; // Silakan ganti ini
-            const USER_PASS = "RAHASIA_USER";   // Silakan ganti ini
+            const ADMIN_PASS = "admin123"; // Silakan ganti ini
+            const USER_PASS = "user123";   // Silakan ganti ini
 
             if (u === 'admin' && p === ADMIN_PASS) {
                 currentUser = 'admin';
