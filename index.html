@@ -389,8 +389,8 @@
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        /* --- INTEGRASI GOOGLE SPREADSHEET --- */
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0X6dTdVvMRO-cpeC3mvP8NsM9CPPvEbYufWcoizf9N6SmE69qKiqgGt80M-IPyFMazA/exec';
+/* --- INTEGRASI GOOGLE SPREADSHEET (VERSI LENGKAP) --- */
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0X6dTdVvMRO-cpeC3mvP8NsM9CPPvEbYufWcoizf9N6SmE69qKiqgGt80M-IPyFMazA/exec'; // Pastikan URL ini sudah benar
 
         async function uploadToSheet() {
             const dataToSync = {
@@ -399,32 +399,48 @@
                 subjects: JSON.parse(localStorage.getItem('subjects')) || []
             };
 
+            console.log("Memulai sinkronisasi ke Spreadsheet...");
+
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     body: JSON.stringify(dataToSync)
                 });
-                console.log("Sync Sukses");
+                console.log("Sinkronisasi Berhasil!");
             } catch (error) {
-                console.error("Sync Gagal:", error);
+                console.error("Sinkronisasi Gagal:", error);
             }
         }
 
-        // Membungkus fungsi renderTable agar otomatis upload ke spreadsheet
+        // 1. Integrasi saat tabel project berubah (tambah/update/hapus project)
         const originalRenderTable = renderTable;
         renderTable = function() {
             originalRenderTable(); 
             uploadToSheet();      
         };
 
-        // Membungkus fungsi saveManagement agar otomatis upload ke spreadsheet
+        // 2. Integrasi saat klik "Simpan Pengaturan" di Management
         const originalSaveManagement = saveManagement;
         saveManagement = function() {
             originalSaveManagement();
+            uploadToSheet(); // Ini akan mengirim data Editor & Subject terbaru
+        };
+
+        // 3. Integrasi saat menghapus editor atau subject (langsung sinkron)
+        const originalDeleteEditor = deleteEditor;
+        deleteEditor = function(i) {
+            originalDeleteEditor(i);
+            uploadToSheet();
+        };
+
+        const originalDeleteSubject = deleteSubject;
+        deleteSubject = function(i) {
+            originalDeleteSubject(i);
             uploadToSheet();
         };
     </script>
 </body>
 </html>
+
 
