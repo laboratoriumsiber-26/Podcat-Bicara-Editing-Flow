@@ -3,14 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Podcast Bicara - Workflow</title>
+    <title>Podcast Bicara - Workflow Cloud</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --ios-blue: #007AFF; --ios-red: #FF3B30; --ios-green: #34C759;
-            --ios-yellow: #FFCC00; --ios-bg: #F2F2F7;
-        }
+        :root { --ios-blue: #007AFF; --ios-red: #FF3B30; --ios-green: #34C759; --ios-yellow: #FFCC00; --ios-bg: #F2F2F7; }
         body { margin: 0; font-family: -apple-system, sans-serif; background: var(--ios-bg); color: #000; }
         #login-page { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1590602847861-f357a9332bbc?q=80&w=1920') center/cover; }
         .login-card { background: white; padding: 30px; border-radius: 25px; width: 300px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
@@ -31,13 +28,9 @@
         label { font-size: 11px; font-weight: bold; color: #888; display: block; margin-bottom: 5px; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
         .btn-main { background: var(--ios-blue); color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .btn-danger { background: var(--ios-red); color: white; border: none; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; width: 100%; }
-        .pill { padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; }
-        .blink-red { animation: blinker 1s linear infinite !important; background-color: var(--ios-red) !important; color: white !important; }
-        @keyframes blinker { 50% { opacity: 0.2; } }
+        .pill { padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; color: white; }
         .mgmt-list { margin: 10px 0; padding: 0; list-style: none; background: #fff; border-radius: 10px; }
         .mgmt-item { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 12px; align-items: center; }
-        .del-btn { color: var(--ios-red); cursor: pointer; border: none; background: none; }
         .hidden { display: none; }
     </style>
 </head>
@@ -45,7 +38,7 @@
 
     <div id="login-page">
         <div class="login-card">
-            <h2 style="margin-top:0">Podcast Bicara</h2>
+            <h2>Podcast Bicara</h2>
             <input type="text" id="username" placeholder="Username">
             <input type="password" id="password" placeholder="Password" style="margin-top:10px">
             <button class="btn-main" style="width:100%; margin-top:20px" onclick="handleLogin()">Sign In</button>
@@ -54,10 +47,7 @@
 
     <div id="dashboard-page">
         <div class="header-bar">
-            <div>
-                <h2 style="margin:0">Workflow Editing</h2>
-                <small id="user-info" style="color:#666"></small>
-            </div>
+            <div><h2 style="margin:0">Workflow Editing</h2><small id="user-info"></small></div>
             <button class="btn-main" style="background:#8e8e93" onclick="handleLogout()">Logout</button>
         </div>
 
@@ -72,17 +62,8 @@
         </div>
 
         <div class="action-bar" style="margin-bottom: 20px; display: flex; gap: 10px;">
-            <select id="f-subject" onchange="renderTable()" style="width: auto;"><option value="">Semua Subject</option></select>
-            <select id="f-editor" onchange="renderTable()" style="width: auto;"><option value="">Semua Editor</option></select>
-            <select id="f-status" onchange="renderTable()" style="width: auto;">
-                <option value="">Semua Status</option>
-                <option value="To do">To do</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Review">Review</option>
-                <option value="Revision Needed">Revision Needed</option>
-                <option value="Retake">Retake</option>
-                <option value="Finalized">Finalized</option>
-            </select>
+            <select id="f-subject" onchange="renderTable()"></select>
+            <select id="f-editor" onchange="renderTable()"></select>
             <div id="admin-controls" style="margin-left: auto; display: flex; gap: 10px;">
                 <button class="btn-main" onclick="openModal('modalNewProject')">New Project</button>
                 <button class="btn-main" style="background:#333" onclick="openManagement()">Management</button>
@@ -93,7 +74,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Project Title</th><th>Subject</th><th>Editor</th><th>Deadline</th><th>Status</th>
+                        <th>Title</th><th>Subject</th><th>Editor</th><th>Deadline</th><th>Status</th>
                         <th>Material</th><th>RAW</th><th>Result</th><th>Revision</th><th>Note</th><th>Action</th>
                     </tr>
                 </thead>
@@ -104,84 +85,80 @@
 
     <div id="modalManagement" class="modal">
         <div class="modal-content">
-            <h3>Management & WA Settings</h3>
-            <div style="background:#f0f0f7; padding:15px; border-radius:15px; margin-bottom:15px">
-                <label>Nomor WA Admin (Status: REVIEW)</label>
-                <input type="text" id="wa-review-multi" placeholder="62812...">
-                <label style="margin-top:10px">Nomor WA Admin (Status: RETAKE)</label>
-                <input type="text" id="wa-retake-multi" placeholder="62812...">
-            </div>
-            <div style="background:#f0f0f7; padding:15px; border-radius:15px; margin-bottom:15px">
-                <label>Daftar Editor:</label>
-                <div id="list-editor-del" class="mgmt-list"></div>
-                <input type="text" id="m-name" placeholder="Nama Editor">
-                <input type="text" id="m-wa" placeholder="WA Editor (628...)">
-                <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addEditor()">Tambah Editor</button>
-            </div>
-            <div style="background:#f0f0f7; padding:15px; border-radius:15px">
-                <label>Daftar Subject:</label>
-                <div id="list-subject-del" class="mgmt-list"></div>
-                <input type="text" id="m-sub" placeholder="Nama Subject">
-                <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addSubject()">Tambah Subject</button>
-            </div>
-            <button class="btn-main" style="width:100%; margin-top:15px; background:#333" onclick="saveManagement()">Simpan Pengaturan & Sinkron</button>
-            <button class="btn-main" style="width:100%; background:#888; margin-top:8px" onclick="closeModal('modalManagement')">Batal</button>
+            <h3>Management</h3>
+            <label>Daftar Editor:</label>
+            <div id="list-editor-del" class="mgmt-list"></div>
+            <input type="text" id="m-name" placeholder="Nama Editor">
+            <input type="text" id="m-wa" placeholder="Nomor WA (628...)">
+            <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addEditor()">Tambah Editor</button>
+            <hr>
+            <label>Daftar Subject:</label>
+            <div id="list-subject-del" class="mgmt-list"></div>
+            <input type="text" id="m-sub" placeholder="Nama Subject">
+            <button class="btn-main" style="background:var(--ios-green); width:100%; margin-top:10px" onclick="addSubject()">Tambah Subject</button>
+            <button class="btn-main" style="width:100%; margin-top:20px; background:#333" onclick="saveManagement()">Selesai & Sinkron Cloud</button>
+            <button class="btn-main" style="width:100%; background:#888; margin-top:8px" onclick="closeModal('modalManagement')">Tutup</button>
         </div>
     </div>
 
     <div id="modalNewProject" class="modal">
         <div class="modal-content">
             <h3>New Project</h3>
-            <div class="input-group"><label>Project Title</label><input type="text" id="n-title"></div>
+            <div class="input-group"><label>Title</label><input type="text" id="n-title"></div>
             <div class="input-group"><label>Subject</label><select id="n-subject"></select></div>
-            <div class="input-group"><label>Editor PJ</label><select id="n-editor"></select></div>
+            <div class="input-group"><label>Editor</label><select id="n-editor"></select></div>
             <div class="input-group"><label>Deadline</label><input type="date" id="n-deadline"></div>
             <div class="input-group"><label>Material Link</label><input type="text" id="n-mat"></div>
             <div class="input-group"><label>RAW Link</label><input type="text" id="n-raw"></div>
-            <button class="btn-main" style="width:100%" onclick="saveNewProject()">Buat Project</button>
+            <button class="btn-main" style="width:100%" onclick="saveNewProject()">Buat & Simpan</button>
             <button class="btn-main" style="width:100%; background:#888; margin-top:8px" onclick="closeModal('modalNewProject')">Batal</button>
         </div>
     </div>
 
     <div id="modalAction" class="modal">
         <div class="modal-content">
-            <h3 id="a-title-display">Project Detail</h3>
-            <div class="input-group"><label>Status</label><select id="a-status" onchange="toggleNoteField()"></select></div>
-            <div class="input-group"><label>Link Video Result</label><input type="text" id="a-result"></div>
-            <div class="input-group"><label>Link Video Revision</label><input type="text" id="a-revision"></div>
-            <div class="input-group">
-                <label>Note / Catatan</label>
-                <textarea id="a-note" style="height: 100px;"></textarea>
+            <h3 id="a-title-display">Update Project</h3>
+            <div class="input-group"><label>Status</label>
+                <select id="a-status">
+                    <option value="To do">To do</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Review">Review</option>
+                    <option value="Revision Needed">Revision Needed</option>
+                    <option value="Retake">Retake</option>
+                    <option value="Finalized">Finalized</option>
+                </select>
             </div>
-            <div id="admin-pj-zone" class="hidden"><label>Ganti Editor PJ</label><select id="a-editor-select"></select></div>
+            <div class="input-group"><label>Result Link</label><input type="text" id="a-result"></div>
+            <div class="input-group"><label>Revision Link</label><input type="text" id="a-revision"></div>
+            <div class="input-group"><label>Note</label><textarea id="a-note"></textarea></div>
+            <div id="admin-pj-zone" class="hidden"><label>Ganti Editor</label><select id="a-editor-select"></select></div>
             <button class="btn-main" style="width:100%; margin-top:10px" onclick="saveAction()">Simpan Update</button>
-            <div id="admin-delete-zone" class="hidden"><button class="btn-danger" onclick="deleteProject()">Hapus Project</button></div>
-            <button class="btn-main" style="width:100%; background:#888; margin-top:10px" onclick="closeModal('modalAction')">Tutup</button>
+            <div id="admin-delete-zone" class="hidden"><button class="btn-main" style="background:var(--ios-red); width:100%; margin-top:10px" onclick="deleteProject()">Hapus Project</button></div>
+            <button class="btn-main" style="width:100%; background:#888; margin-top:8px" onclick="closeModal('modalAction')">Tutup</button>
         </div>
     </div>
 
     <script>
+        // MASUKKAN URL WEB APP ANDA DI SINI
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztPNhlV5lAXTqmsWU7HBWWjpKs9tRyFvQis9IRtYrzm8CRz2RQefnwfySHOQ5k9_La/exec';
 
         let currentUser = null;
         let activeId = null;
 
         let subjects = JSON.parse(localStorage.getItem('subjects')) || ["Heru Mudiyanto M,Pd", "Drs. Budi"];
-        let editors = JSON.parse(localStorage.getItem('editors')) || [{name: "Mohamad Ardan Fahrobi", wa: "628571234567"}];
+        let editors = JSON.parse(localStorage.getItem('editors')) || [{name: "Mohamad Ardan Fahrobi", wa: "62857"}];
         let projects = JSON.parse(localStorage.getItem('projects')) || [];
 
         window.onload = () => {
-            const session = localStorage.getItem('podcastSession');
-            if (session) { currentUser = session; showDashboard(); }
+            const sess = localStorage.getItem('podcastSession');
+            if(sess) { currentUser = sess; showDashboard(); }
         };
 
         function handleLogin() {
             const u = document.getElementById('username').value.toLowerCase();
             if(u === 'admin' || u === 'user') {
-                currentUser = u;
-                localStorage.setItem('podcastSession', u);
-                showDashboard();
-            } else { alert("Login gagal!"); }
+                currentUser = u; localStorage.setItem('podcastSession', u); showDashboard();
+            } else alert("Login salah!");
         }
 
         function handleLogout() { localStorage.removeItem('podcastSession'); location.reload(); }
@@ -191,62 +168,50 @@
             document.getElementById('dashboard-page').style.display = 'block';
             document.getElementById('user-info').innerText = `Role: ${currentUser.toUpperCase()}`;
             if(currentUser === 'user') document.getElementById('admin-controls').classList.add('hidden');
-            syncDropdowns();
-            renderTable();
+            syncDropdowns(); renderTable();
         }
 
         function syncDropdowns() {
-            const htmlSub = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
-            const htmlEd = editors.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
-            ['n-subject', 'f-subject'].forEach(id => {
-                document.getElementById(id).innerHTML = (id.startsWith('f') ? '<option value="">Semua Subject</option>' : '') + htmlSub;
-            });
-            ['n-editor', 'f-editor', 'a-editor-select'].forEach(id => {
-                document.getElementById(id).innerHTML = (id.startsWith('f') ? '<option value="">Semua Editor</option>' : '') + htmlEd;
-            });
+            const sOpt = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+            const eOpt = editors.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+            document.getElementById('f-subject').innerHTML = '<option value="">Semua Subject</option>' + sOpt;
+            document.getElementById('f-editor').innerHTML = '<option value="">Semua Editor</option>' + eOpt;
+            document.getElementById('n-subject').innerHTML = sOpt;
+            document.getElementById('n-editor').innerHTML = eOpt;
+            document.getElementById('a-editor-select').innerHTML = eOpt;
         }
 
-async function uploadToCloud() {
-    console.log("Sedang mengirim data ke 3 tab Spreadsheet...");
-    
-    // Mengambil semua data dari LocalStorage
-    const data = { 
-        projects: JSON.parse(localStorage.getItem('projects')) || [], 
-        editors: JSON.parse(localStorage.getItem('editors')) || [], 
-        subjects: JSON.parse(localStorage.getItem('subjects')) || [] 
-    };
-
-    try {
-        await fetch(SCRIPT_URL, { 
-            method: 'POST', 
-            mode: 'no-cors', // Penting agar tidak kena blokir browser
-            body: JSON.stringify(data) 
-        });
-        console.log("Sinkronisasi 3 Tab Berhasil!");
-    } catch(e) { 
-        console.error("Gagal Sinkron", e); 
-    }
-}
+        async function uploadToCloud() {
+            console.log("Syncing to Cloud...");
+            const data = { 
+                projects: JSON.parse(localStorage.getItem('projects')) || [], 
+                editors: JSON.parse(localStorage.getItem('editors')) || [], 
+                subjects: JSON.parse(localStorage.getItem('subjects')) || [] 
+            };
+            try {
+                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+                console.log("Cloud Sync Success!");
+            } catch(e) { console.error("Cloud Sync Failed", e); }
+        }
 
         function renderTable() {
-            const fSub = document.getElementById('f-subject').value;
-            const fEd = document.getElementById('f-editor').value;
-            const fStat = document.getElementById('f-status').value;
+            const fs = document.getElementById('f-subject').value;
+            const fe = document.getElementById('f-editor').value;
             const tbody = document.getElementById('main-table-body');
             
             tbody.innerHTML = projects
-                .filter(p => (!fSub || p.subject === fSub) && (!fEd || p.editor === fEd) && (!fStat || p.status === fStat))
+                .filter(p => (!fs || p.subject === fs) && (!fe || p.editor === fe))
                 .map(p => `
                     <tr>
                         <td><b>${p.title}</b></td>
                         <td>${p.subject}</td><td>${p.editor}</td><td>${p.deadline}</td>
-                        <td><span class="pill" style="background:${getStatusColor(p.status)}; color:white">${p.status}</span></td>
-                        <td><a href="${p.material}"><i class="fa-solid fa-download"></i></a></td>
-                        <td><a href="${p.raw}" target="_blank"><i class="fa-solid fa-link"></i></a></td>
-                        <td>${p.result ? `<a href="${p.result}" target="_blank"><i class="fa-solid fa-play"></i></a>` : '-'}</td>
-                        <td>${p.revision ? `<a href="${p.revision}" target="_blank"><i class="fa-solid fa-rotate"></i></a>` : '-'}</td>
+                        <td><span class="pill" style="background:${getColor(p.status)}">${p.status}</span></td>
+                        <td>${p.material ? `<a href="${p.material}" target="_blank">Link</a>` : '-'}</td>
+                        <td>${p.raw ? `<a href="${p.raw}" target="_blank">Link</a>` : '-'}</td>
+                        <td>${p.result ? `<a href="${p.result}" target="_blank">Video</a>` : '-'}</td>
+                        <td>${p.revision ? `<a href="${p.revision}" target="_blank">Revisi</a>` : '-'}</td>
                         <td><small>${p.note || '-'}</small></td>
-                        <td><button onclick="openAction(${p.id})"><i class="fa-solid fa-pen-to-square"></i></button></td>
+                        <td><button onclick="openAction(${p.id})">Edit</button></td>
                     </tr>`).join('');
             
             localStorage.setItem('projects', JSON.stringify(projects));
@@ -258,11 +223,23 @@ async function uploadToCloud() {
                 id: Date.now(), title: document.getElementById('n-title').value,
                 subject: document.getElementById('n-subject').value, editor: document.getElementById('n-editor').value,
                 deadline: document.getElementById('n-deadline').value, material: document.getElementById('n-mat').value,
-                raw: document.getElementById('n-raw').value, status: 'To do'
+                raw: document.getElementById('n-raw').value, status: 'To do', note: '', result: '', revision: ''
             });
-            closeModal('modalNewProject');
-            renderTable();
-            uploadToSheet();
+            closeModal('modalNewProject'); renderTable(); uploadToCloud();
+        }
+
+        function openAction(id) {
+            activeId = id; const p = projects.find(x => x.id === id);
+            document.getElementById('a-status').value = p.status;
+            document.getElementById('a-result').value = p.result || '';
+            document.getElementById('a-revision').value = p.revision || '';
+            document.getElementById('a-note').value = p.note || '';
+            if(currentUser === 'admin') {
+                document.getElementById('admin-pj-zone').classList.remove('hidden');
+                document.getElementById('admin-delete-zone').classList.remove('hidden');
+                document.getElementById('a-editor-select').value = p.editor;
+            }
+            openModal('modalAction');
         }
 
         function saveAction() {
@@ -272,95 +249,51 @@ async function uploadToCloud() {
             p.revision = document.getElementById('a-revision').value;
             p.note = document.getElementById('a-note').value;
             if(currentUser === 'admin') p.editor = document.getElementById('a-editor-select').value;
-            closeModal('modalAction');
-            renderTable();
-            uploadToSheet();
+            closeModal('modalAction'); renderTable(); uploadToCloud();
         }
 
         function deleteProject() {
-            if(confirm("Hapus project?")) {
+            if(confirm("Hapus project ini?")) {
                 projects = projects.filter(x => x.id !== activeId);
-                closeModal('modalAction');
-                renderTable();
-                uploadToSheet();
+                closeModal('modalAction'); renderTable(); uploadToCloud();
             }
         }
 
-        function openManagement() {
-            renderMgmtLists();
-            openModal('modalManagement');
+        function openManagement() { renderMgmt(); openModal('modalManagement'); }
+        function renderMgmt() {
+            document.getElementById('list-editor-del').innerHTML = editors.map((e,i) => `<div class="mgmt-item">${e.name} <button onclick="delEd(${i})">X</button></div>`).join('');
+            document.getElementById('list-subject-del').innerHTML = subjects.map((s,i) => `<div class="mgmt-item">${s} <button onclick="delSub(${i})">X</button></div>`).join('');
         }
-
-        function renderMgmtLists() {
-            document.getElementById('list-editor-del').innerHTML = editors.map((e, i) => `
-                <div class="mgmt-item"><span>${e.name}</span><i class="fa-solid fa-trash del-btn" onclick="deleteEditor(${i})"></i></div>`).join('');
-            document.getElementById('list-subject-del').innerHTML = subjects.map((s, i) => `
-                <div class="mgmt-item"><span>${s}</span><i class="fa-solid fa-trash del-btn" onclick="deleteSubject(${i})"></i></div>`).join('');
-        }
-
-        function addEditor() {
-            const n = document.getElementById('m-name').value;
-            const w = document.getElementById('m-wa').value;
-            if(n && w) { editors.push({name:n, wa:w}); renderMgmtLists(); }
-        }
-
-        function addSubject() {
-            const s = document.getElementById('m-sub').value;
-            if(s) { subjects.push(s); renderMgmtLists(); }
-        }
-
-        function deleteEditor(i) { editors.splice(i, 1); renderMgmtLists(); }
-        function deleteSubject(i) { subjects.splice(i, 1); renderMgmtLists(); }
+        function addEditor() { const n=document.getElementById('m-name').value, w=document.getElementById('m-wa').value; if(n){editors.push({name:n, wa:w}); renderMgmt();} }
+        function addSubject() { const s=document.getElementById('m-sub').value; if(s){subjects.push(s); renderMgmt();} }
+        function delEd(i) { editors.splice(i,1); renderMgmt(); }
+        function delSub(i) { subjects.splice(i,1); renderMgmt(); }
 
         function saveManagement() {
             localStorage.setItem('editors', JSON.stringify(editors));
             localStorage.setItem('subjects', JSON.stringify(subjects));
-            syncDropdowns();
-            uploadToSheet();
-            alert("Tersimpan & Sinkron ke Spreadsheet!");
-            closeModal('modalManagement');
+            syncDropdowns(); uploadToCloud(); closeModal('modalManagement');
+            alert("Data Management Disinkronkan!");
         }
 
-        function getStatusColor(s) {
-            const colors = { 'Finalized': 'var(--ios-green)', 'In Progress': 'var(--ios-yellow)', 'Review': 'var(--ios-blue)', 'Retake': '#FFCC00', 'Revision Needed': 'var(--ios-red)' };
-            return colors[s] || '#8e8e93';
+        function getColor(s) {
+            const c = {'To do':'#888','In Progress':'var(--ios-yellow)','Finalized':'var(--ios-green)','Revision Needed':'var(--ios-red)','Review':'var(--ios-blue)','Retake':'#FFCC00'};
+            return c[s] || '#000';
         }
 
         function updateChart() {
-            const s = { todo: projects.filter(x => x.status === 'To do').length, progress: projects.filter(x => x.status === 'In Progress').length, final: projects.filter(x => x.status === 'Finalized').length };
+            const s = { todo: projects.filter(x=>x.status==='To do').length, progress: projects.filter(x=>x.status==='In Progress').length, final: projects.filter(x=>x.status==='Finalized').length };
             document.getElementById('stat-total').innerText = projects.length;
             document.getElementById('stat-todo').innerText = s.todo;
             document.getElementById('stat-progress').innerText = s.progress;
             document.getElementById('stat-final').innerText = s.final;
             const ctx = document.getElementById('statusChart').getContext('2d');
             if(window.myChart) window.myChart.destroy();
-            window.myChart = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [s.todo, s.progress, s.final], backgroundColor: ['#007AFF', '#FFCC00', '#34C759'], borderWidth: 0 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            window.myChart = new Chart(ctx, { type:'doughnut', data:{ datasets:[{data:[s.todo, s.progress, s.final], backgroundColor:['#007AFF','#FFCC00','#34C759']}] }, options:{maintainAspectRatio:false}});
         }
 
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        function openAction(id) {
-            activeId = id;
-            const p = projects.find(x => x.id === id);
-            document.getElementById('a-result').value = p.result || "";
-            document.getElementById('a-revision').value = p.revision || "";
-            document.getElementById('a-note').value = p.note || "";
-            const sSelect = document.getElementById('a-status');
-            const allS = ["To do", "In Progress", "Review", "Revision Needed", "Retake", "Finalized"];
-            sSelect.innerHTML = (currentUser === 'admin' ? allS : allS.slice(0,5)).map(s => `<option value="${s}">${s}</option>`).join('');
-            sSelect.value = p.status;
-            if(currentUser === 'admin') {
-                document.getElementById('admin-delete-zone').classList.remove('hidden');
-                document.getElementById('admin-pj-zone').classList.remove('hidden');
-            }
-            openModal('modalAction');
-        }
-
-        function toggleNoteField() {} 
     </script>
 </body>
 </html>
-
-
-
